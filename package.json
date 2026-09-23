@@ -1,0 +1,10 @@
+{
+  "name": "wasachat",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sistema de agenda, reservas, CRM y chatbot WhatsApp con WAHA",
+  "dependencies": {
+    "postgres": "^3.4.5"
+  }
+}

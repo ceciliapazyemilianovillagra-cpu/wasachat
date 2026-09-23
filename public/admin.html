@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — WASACHAT</title>
+<style>
+:root {
+  --c1: #1B4332; --c2: #B08947; --ca: #E8DCC8;
+  --bg: #F0F2F5; --card: #fff; --text: #1a1a1a; --muted: #6b7280;
+  --border: #e5e7eb; --rad: 10px;
+  --sidebar: 220px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; display: flex; min-height: 100vh; }
+/* --- sidebar --- */
+nav { width: var(--sidebar); background: var(--c1); color: #fff; display: flex; flex-direction: column; padding: 1.2rem 0; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
+nav .logo { padding: .8rem 1.2rem 1.4rem; font-size: 1.1rem; font-weight: 800; letter-spacing: -.3px; border-bottom: 1px solid rgba(255,255,255,.12); }
+nav a { display: flex; align-items: center; gap: .6rem; padding: .7rem 1.2rem; font-size: .9rem; color: rgba(255,255,255,.75); text-decoration: none; cursor: pointer; transition: .12s; border-left: 3px solid transparent; }
+nav a:hover    { background: rgba(255,255,255,.08); color: #fff; }
+nav a.active   { background: rgba(255,255,255,.12); color: #fff; border-left-color: var(--c2); }
+nav .section   { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; padding: 1rem 1.2rem .3rem; color: rgba(255,255,255,.4); }
+/* --- main --- */
+main { margin-left: var(--sidebar); flex: 1; padding: 1.8rem 2rem; }
+.tab { display: none; } .tab.active { display: block; }
+h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 1.4rem; }
+h2 { font-size: 1rem; font-weight: 700; color: var(--c1); margin-bottom: 1rem; }
+/* --- cards & grid --- */
+.card   { background: var(--card); border-radius: var(--rad); padding: 1.2rem 1.4rem; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 1.2rem; }
+.stats  { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.4rem; }
+.stat   { background: var(--card); border-radius: var(--rad); padding: 1rem 1.2rem; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.stat-n { font-size: 2rem; font-weight: 800; color: var(--c1); }
+.stat-l { font-size: .8rem; color: var(--muted); margin-top: .1rem; }
+/* --- table --- */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+th { background: #f9fafb; padding: .6rem .8rem; text-align: left; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 2px solid var(--border); }
+td { padding: .65rem .8rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:hover td { background: #fafafa; }
+/* --- badges --- */
+.badge { display: inline-block; padding: .2rem .5rem; border-radius: 12px; font-size: .75rem; font-weight: 700; }
+.b-pendiente  { background: #fef9c3; color: #854d0e; }
+.b-confirmada { background: #dcfce7; color: #15803d; }
+.b-completada { background: #dbeafe; color: #1d4ed8; }
+.b-cancelada  { background: #fee2e2; color: #b91c1c; }
+.b-bot    { background: #e0e7ff; color: #3730a3; }
+.b-abierta{ background: #fef3c7; color: #92400e; }
+.b-resuelta{ background: #d1fae5; color: #065f46; }
+/* --- forms --- */
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .8rem; }
+label { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); margin-bottom: .25rem; }
+input, select, textarea { width: 100%; padding: .6rem .8rem; border: 1px solid var(--border); border-radius: 7px; font-size: .9rem; background: #fff; margin-bottom: .8rem; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c2); }
+.btn { padding: .6rem 1.2rem; border: none; border-radius: 7px; font-size: .88rem; font-weight: 700; cursor: pointer; transition: .12s; }
+.btn-primary { background: var(--c1); color: #fff; }
+.btn-primary:hover { background: #14352a; }
+.btn-sm { padding: .35rem .7rem; font-size: .78rem; }
+.btn-danger { background: #fee2e2; color: #b91c1c; }
+.btn-ok  { background: #dcfce7; color: #15803d; }
+.btn-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: -.3rem; }
+.msg { padding: .55rem .9rem; border-radius: 7px; font-size: .85rem; margin-bottom: .8rem; }
+.msg-err { background: #fee2e2; color: #b91c1c; }
+.msg-ok  { background: #dcfce7; color: #15803d; }
+.toolbar { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.toolbar input, .toolbar select { margin: 0; width: auto; }
+/* --- crm chat --- */
+.chat-bubble { max-width: 80%; padding: .55rem .8rem; border-radius: 10px; font-size: .88rem; margin-bottom: .4rem; }
+.entrante { background: #f3f4f6; align-self: flex-start; }
+.saliente { background: var(--c1); color: #fff; align-self: flex-end; }
+.chat-box { display: flex; flex-direction: column; gap: .2rem; max-height: 360px; overflow-y: auto; padding: .5rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border); }
+/* login */
+#login { max-width: 360px; margin: 5rem auto; }
+.login-logo { text-align: center; font-size: 2rem; font-weight: 900; color: var(--c1); margin-bottom: 1.5rem; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="card" style="display:none">
+  <div class="login-logo">🗓 WASACHAT</div>
+  <div id="login-msg"></div>
+  <label>Clave admin</label>
+  <input id="input-secret" type="password" placeholder="Contraseña de administrador">
+  <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Entrar</button>
+</div>
+
+<!-- APP -->
+<nav id="nav" style="display:none">
+  <div class="logo">🗓 WASACHAT</div>
+  <div class="section">Dashboard</div>
+  <a onclick="mostrar('dashboard')" class="active">📊 Métricas</a>
+  <a onclick="mostrar('reservas')">📋 Reservas</a>
+  <div class="section">Agenda</div>
+  <a onclick="mostrar('especialistas')">👤 Especialistas</a>
+  <a onclick="mostrar('servicios')">🛠 Servicios</a>
+  <a onclick="mostrar('horarios')">🕐 Horarios</a>
+  <a onclick="mostrar('bloqueos')">🚫 Bloqueos</a>
+  <div class="section">CRM</div>
+  <a onclick="mostrar('contactos')">💬 Contactos</a>
+  <a onclick="mostrar('conversaciones')">🤖 Conversaciones</a>
+  <div class="section">Sistema</div>
+  <a onclick="mostrar('config')">⚙️ Configuración</a>
+  <a onclick="logout()" style="margin-top:auto">🚪 Salir</a>
+</nav>
+
+<main id="main" style="display:none">
+
+<!-- DASHBOARD -->
+<div class="tab active" id="tab-dashboard">
+  <h1>Dashboard</h1>
+  <div class="stats" id="stats">
+    <div class="stat"><div class="stat-n" id="s-hoy">—</div><div class="stat-l">Reservas hoy</div></div>
+    <div class="stat"><div class="stat-n" id="s-pend">—</div><div class="stat-l">Pendientes</div></div>
+    <div class="stat"><div class="stat-n" id="s-mes">—</div><div class="stat-l">Total este mes</div></div>
+    <div class="stat"><div class="stat-n" id="s-ingreso">—</div><div class="stat-l">Ingreso mes</div></div>
+    <div class="stat"><div class="stat-n" id="s-cancel">—</div><div class="stat-l">% Cancelaciones</div></div>
+  </div>
+  <div class="card">
+    <h2>Próximas reservas</h2>
+    <div id="prox-reservas"><div>Cargando...</div></div>
+  </div>
+</div>
+
+<!-- RESERVAS -->
+<div class="tab" id="tab-reservas">
+  <h1>Reservas</h1>
+  <div class="toolbar">
+    <select id="filtro-estado" onchange="loadReservas()">
+      <option value="todas">Todas</option>
+      <option value="pendiente">Pendientes</option>
+      <option value="confirmada">Confirmadas</option>
+      <option value="completada">Completadas</option>
+      <option value="cancelada">Canceladas</option>
+    </select>
+    <button class="btn btn-primary" onclick="loadReservas()">🔄 Actualizar</button>
+  </div>
+  <div id="tabla-reservas"></div>
+</div>
+
+<!-- ESPECIALISTAS -->
+<div class="tab" id="tab-especialistas">
+  <h1>Especialistas</h1>
+  <div class="card">
+    <h2 id="form-esp-titulo">Nuevo especialista</h2>
+    <div id="form-esp-msg"></div>
+    <input type="hidden" id="esp-id">
+    <label>Nombre *</label><input id="esp-nombre" placeholder="Nombre completo">
+    <div class="row2">
+      <div><label>Color</label><input id="esp-color" type="color" value="#1B4332"></div>
+      <div><label>Orden</label><input id="esp-orden" type="number" value="0"></div>
+    </div>
+    <label>URL foto (opcional)</label><input id="esp-foto" placeholder="https://...">
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveEspecialista()">Guardar</button>
+      <button class="btn" onclick="resetEspForm()">Limpiar</button>
+    </div>
+  </div>
+  <div id="lista-esp"></div>
+</div>
+
+<!-- SERVICIOS -->
+<div class="tab" id="tab-servicios">
+  <h1>Servicios</h1>
+  <div class="card">
+    <h2 id="form-srv-titulo">Nuevo servicio</h2>
+    <div id="form-srv-msg"></div>
+    <input type="hidden" id="srv-id">
+    <label>Nombre *</label><input id="srv-nombre" placeholder="Nombre del servicio">
+    <label>Descripción</label><input id="srv-desc" placeholder="Descripción breve">
+    <div class="row3">
+      <div><label>Duración (min)*</label><input id="srv-dur" type="number" value="30"></div>
+      <div><label>Precio</label><input id="srv-precio" type="number" value="0" step="0.01"></div>
+      <div><label>Especialista</label><select id="srv-esp"><option value="">Todos</option></select></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveServicio()">Guardar</button>
+      <button class="btn" onclick="resetSrvForm()">Limpiar</button>
+    </div>
+  </div>
+  <div id="lista-srv"></div>
+</div>
+
+<!-- HORARIOS -->
+<div class="tab" id="tab-horarios">
+  <h1>Horarios de atención</h1>
+  <div class="card">
+    <h2>Agregar horario</h2>
+    <div id="form-hor-msg"></div>
+    <div class="row2">
+      <div><label>Especialista *</label><select id="hor-esp"></select></div>
+      <div><label>Día *</label>
+        <select id="hor-dia">
+          <option>Lunes</option><option>Martes</option><option>Miércoles</option>
+          <option>Jueves</option><option>Viernes</option><option>Sábado</option><option>Domingo</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div><label>Desde *</label><input id="hor-desde" type="time" value="09:00"></div>
+      <div><label>Hasta *</label><input id="hor-hasta" type="time" value="18:00"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveHorario()">Guardar horario</button>
+  </div>
+  <div id="lista-hor"></div>
+</div>
+
+<!-- BLOQUEOS -->
+<div class="tab" id="tab-bloqueos">
+  <h1>Bloqueos / feriados</h1>
+  <div class="card">
+    <h2>Nuevo bloqueo</h2>
+    <div id="form-blq-msg"></div>
+    <div class="row2">
+      <div><label>Especialista</label><select id="blq-esp"><option value="TODOS">Todos</option></select></div>
+      <div><label>Motivo</label><input id="blq-motivo" placeholder="Vacaciones, feriado..."></div>
+    </div>
+    <div class="row2">
+      <div><label>Desde (fecha) *</label><input id="blq-fd" type="date"></div>
+      <div><label>Hasta (fecha) *</label><input id="blq-fh" type="date"></div>
+    </div>
+    <div class="row2">
+      <div><label>Hora inicio (opcional)</label><input id="blq-hd" type="time"></div>
+      <div><label>Hora fin (opcional)</label><input id="blq-hh" type="time"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveBloqueo()">Guardar bloqueo</button>
+  </div>
+  <div id="lista-blq"></div>
+</div>
+
+<!-- CONTACTOS -->
+<div class="tab" id="tab-contactos">
+  <h1>Contactos CRM</h1>
+  <div class="toolbar">
+    <input id="busq-contacto" placeholder="Buscar nombre o teléfono..." style="width:220px">
+    <button class="btn btn-primary" onclick="loadContactos()">🔍 Buscar</button>
+  </div>
+  <div id="tabla-contactos"></div>
+</div>
+
+<!-- CONVERSACIONES -->
+<div class="tab" id="tab-conversaciones">
+  <h1>Conversaciones WhatsApp</h1>
+  <div class="card">
+    <button class="btn btn-primary btn-sm" onclick="loadConversaciones()">🔄 Actualizar</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div id="lista-convs"></div>
+    <div id="chat-panel" class="card" style="display:none">
+      <h2 id="chat-nombre"></h2>
+      <div class="chat-box" id="chat-msgs"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div class="tab" id="tab-config">
+  <h1>Configuración</h1>
+  <div id="form-cfg-msg"></div>
+  <div id="cfg-grid"></div>
+  <button class="btn btn-primary" onclick="saveConfig()">💾 Guardar cambios</button>
+</div>
+
+</main>
+
+<script>
+const API = '/api/agenda';
+let SECRET = '';
+let cfgCache = {};
+let espsCache = [];
+
+function $(id) { return document.getElementById(id); }
+function showMsg(el, msg, tipo) {
+  if (typeof el === 'string') el = $(el);
+  el.innerHTML = msg ? `<div class="msg msg-${tipo}">${msg}</div>` : '';
+}
+
+async function apiFetch(action, extra = {}) {
+  const body = { action, admin_secret: SECRET, ...extra };
+  return fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-secret': SECRET }, body: JSON.stringify(body) }).then(r => r.json());
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+const SK = 'wasa_admin_secret';
+function doLogin() {
+  const v = $('input-secret').value.trim();
+  if (!v) return;
+  SECRET = v;
+  localStorage.setItem(SK, v);
+  launchApp();
+}
+function logout() {
+  localStorage.removeItem(SK);
+  location.reload();
+}
+function launchApp() {
+  $('login').style.display = 'none';
+  $('nav').style.display = '';
+  $('main').style.display = '';
+  mostrar('dashboard');
+  loadDashboard();
+}
+window.addEventListener('load', () => {
+  const s = localStorage.getItem(SK);
+  if (s) { SECRET = s; launchApp(); }
+  else { $('login').style.display = ''; }
+});
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+const LOADERS = {
+  dashboard: loadDashboard, reservas: loadReservas,
+  especialistas: loadEspecialistas, servicios: loadServicios,
+  horarios: loadHorarios, bloqueos: loadBloqueos,
+  contactos: loadContactos, conversaciones: loadConversaciones, config: loadConfig
+};
+function mostrar(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  $(`tab-${tab}`).classList.add('active');
+  event?.currentTarget?.classList.add('active');
+  if (LOADERS[tab]) LOADERS[tab]();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const [m, r] = await Promise.all([
+    apiFetch('getMetricas'),
+    apiFetch('getReservasAdmin', { estado: 'pendiente' }),
+  ]);
+  if (m.ok) {
+    const d = m.data;
+    $('s-hoy').textContent    = d.reservasHoy;
+    $('s-pend').textContent   = d.pendientes;
+    $('s-mes').textContent    = d.totalMes;
+    $('s-ingreso').textContent = '$' + (d.ingresoMes || 0).toLocaleString('es-AR');
+    $('s-cancel').textContent  = d.tasaCancelacion + '%';
+  }
+  if (r.ok) {
+    const rows = r.data.slice(0, 10);
+    $('prox-reservas').innerHTML = rows.length ? `<div class="tbl-wrap"><table>
+      <tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Estado</th><th></th></tr>
+      ${rows.map(r => `<tr>
+        <td>${r.fecha}</td><td>${r.hora_inicio}</td>
+        <td>${r.cliente_nombre}<br><small style="color:#6b7280">${r.cliente_telefono}</small></td>
+        <td>${r.servicio||'—'}</td>
+        <td><span class="badge b-${r.estado}">${r.estado}</span></td>
+        <td><button class="btn btn-sm btn-ok" onclick="confirmarReserva('${r.id}')">✔</button></td>
+      </tr>`).join('')}
+    </table></div>` : '<p style="color:#6b7280">No hay reservas pendientes.</p>';
+  }
+}
+async function confirmarReserva(id) {
+  await apiFetch('updateReserva', { id, estado: 'confirmada' });
+  loadDashboard();
+}
+
+// ── RESERVAS ──────────────────────────────────────────────────────────────────
+async function loadReservas() {
+  const est = $('filtro-estado').value;
+  const res = await apiFetch('getReservasAdmin', { estado: est });
+  if (!res.ok) return;
+  const rows = res.data;
+  $('tabla-reservas').innerHTML = `<div class="tbl-wrap"><table>
+    <tr><th>Código</th><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Esp.</th><th>Estado</th><th>Origen</th><th></th></tr>
+    ${rows.map(r => `<tr>
+      <td><code>${r.codigo}</code></td><td>${r.fecha}</td><td>${r.hora_inicio}</td>
+      <td>${r.cliente_nombre}<br><small>${r.cliente_telefono}</small></td>
+      <td>${r.servicio||'—'}</td><td>${r.especialista||'—'}</td>
+      <td><span class="badge b-${r.estado}">${r.estado}</span></td>
+      <td><small>${r.origen}</small></td>
+      <td>
+        <button class="btn btn-sm btn-ok" onclick="cambiarEstado('${r.id}','confirmada')">✔</button>
+        <button class="btn btn-sm btn-danger" onclick="cambiarEstado('${r.id}','cancelada')">✖</button>
+      </td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+async function cambiarEstado(id, estado) {
+  await apiFetch('updateReserva', { id, estado });
+  loadReservas();
+}
+
+// ── ESPECIALISTAS ─────────────────────────────────────────────────────────────
+async function loadEspecialistas() {
+  const res = await apiFetch('listEspecialistas');
+  if (!res.ok) return;
+  espsCache = res.data;
+  $('lista-esp').innerHTML = `<div class="tbl-wrap"><table>
+    <tr><th>Color</th><th>Nombre</th><th>Activo</th><th>Orden</th><th></th></tr>
+    ${res.data.map(e => `<tr>
+      <td><div style="width:24px;height:24px;border-radius:50%;background:${e.color}"></div></td>
+      <td>${e.nombre}</td>
+      <td>${e.activo ? '✅' : '❌'}</td>
+      <td>${e.orden}</td>
+      <td><button class="btn btn-sm" onclick="editEsp(${JSON.stringify(e).replace(/"/g,'&quot;')})">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="delEsp('${e.id}')">🗑</button></td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+function editEsp(e) {
+  $('esp-id').value = e.id;
+  $('esp-nombre').value = e.nombre;
+  $('esp-color').value = e.color;
+  $('esp-orden').value = e.orden;
+  $('esp-foto').value = e.foto_url || '';
+  $('form-esp-titulo').textContent = 'Editar especialista';
+}
+function resetEspForm() {
+  ['esp-id','esp-nombre','esp-foto'].forEach(id => $(id).value = '');
+  $('esp-color').value = '#1B4332'; $('esp-orden').value = 0;
+  $('form-esp-titulo').textContent = 'Nuevo especialista';
+}
+async function saveEspecialista() {
+  const d = { nombre:$('esp-nombre').value, color:$('esp-color').value, orden:$('esp-orden').value, foto_url:$('esp-foto').value };
+  const id = $('esp-id').value;
+  if (id) d.id = id;
+  const res = await apiFetch('saveEspecialista', d);
+  showMsg('form-esp-msg', res.ok ? '✅ Guardado' : res.error, res.ok ? 'ok' : 'err');
+  if (res.ok) { resetEspForm(); loadEspecialistas(); }
+}
+async function delEsp(id) {
+  if (!confirm('¿Eliminar especialista?')) return;
+  await apiFetch('deleteEspecialista', { id });
+  loadEspecialistas();
+}
+
+// ── SERVICIOS ─────────────────────────────────────────────────────────────────
+async function loadServicios() {
+  await loadEspecialistas();
+  const res = await apiFetch('listServicios');
+  if (!res.ok) return;
+  // populate select
+  $('srv-esp').innerHTML = '<option value="">Todos</option>' + espsCache.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+  $('lista-srv').innerHTML = `<div class="tbl-wrap"><table>
+    <tr><th>Nombre</th><th>Duración</th><th>Precio</th><th>Activo</th><th></th></tr>
+    ${res.data.map(s => `<tr>
+      <td>${s.nombre}<br><small style="color:#6b7280">${s.descripcion||''}</small></td>
+      <td>${s.duracion_minutos} min</td><td>$${s.precio}</td>
+      <td>${s.activo ? '✅' : '❌'}</td>
+      <td><button class="btn btn-sm" onclick="editSrv(${JSON.stringify(s).replace(/"/g,'&quot;')})">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="delSrv('${s.id}')">🗑</button></td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+function editSrv(s) {
+  $('srv-id').value = s.id; $('srv-nombre').value = s.nombre;
+  $('srv-desc').value = s.descripcion||''; $('srv-dur').value = s.duracion_minutos;
+  $('srv-precio').value = s.precio; $('srv-esp').value = s.especialista_id||'';
+  $('form-srv-titulo').textContent = 'Editar servicio';
+}
+function resetSrvForm() {
+  ['srv-id','srv-nombre','srv-desc'].forEach(id=>$(id).value='');
+  $('srv-dur').value=30; $('srv-precio').value=0; $('srv-esp').value='';
+  $('form-srv-titulo').textContent = 'Nuevo servicio';
+}
+async function saveServicio() {
+  const d = { nombre:$('srv-nombre').value, descripcion:$('srv-desc').value, duracion_minutos:$('srv-dur').value, precio:$('srv-precio').value, especialista_id:$('srv-esp').value||null };
+  const id = $('srv-id').value; if (id) d.id = id;
+  const res = await apiFetch('saveServicio', d);
+  showMsg('form-srv-msg', res.ok ? '✅ Guardado' : res.error, res.ok ? 'ok' : 'err');
+  if (res.ok) { resetSrvForm(); loadServicios(); }
+}
+async function delSrv(id) {
+  if (!confirm('¿Eliminar servicio?')) return;
+  await apiFetch('deleteServicio', { id }); loadServicios();
+}
+
+// ── HORARIOS ──────────────────────────────────────────────────────────────────
+async function loadHorarios() {
+  await loadEspecialistas();
+  $('hor-esp').innerHTML = espsCache.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
+  const res = await apiFetch('listHorarios');
+  if (!res.ok) return;
+  $('lista-hor').innerHTML = `<div class="tbl-wrap"><table>
+    <tr><th>Especialista</th><th>Día</th><th>Desde</th><th>Hasta</th><th></th></tr>
+    ${res.data.map(h => {
+      const esp = espsCache.find(e=>e.id===h.especialista_id);
+      return `<tr>
+        <td>${esp?.nombre||h.especialista_id}</td>
+        <td>${h.dia_semana}</td><td>${h.hora_inicio}</td><td>${h.hora_fin}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="delHorario('${h.id}')">🗑</button></td>
+      </tr>`;
+    }).join('')}
+  </table></div>`;
+}
+async function saveHorario() {
+  const d = { especialista_id:$('hor-esp').value, dia_semana:$('hor-dia').value, hora_inicio:$('hor-desde').value, hora_fin:$('hor-hasta').value };
+  const res = await apiFetch('saveHorario', d);
+  showMsg('form-hor-msg', res.ok ? '✅ Guardado' : res.error, res.ok ? 'ok' : 'err');
+  if (res.ok) loadHorarios();
+}
+async function delHorario(id) {
+  await apiFetch('deleteHorario', { id }); loadHorarios();
+}
+
+// ── BLOQUEOS ──────────────────────────────────────────────────────────────────
+async function loadBloqueos() {
+  await loadEspecialistas();
+  $('blq-esp').innerHTML = '<option value="TODOS">Todos</option>' + espsCache.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
+  const res = await apiFetch('listBloqueos');
+  if (!res.ok) return;
+  $('lista-blq').innerHTML = `<div class="tbl-wrap"><table>
+    <tr><th>Especialista</th><th>Desde</th><th>Hasta</th><th>Horas</th><th>Motivo</th><th></th></tr>
+    ${res.data.map(b => `<tr>
+      <td>${b.especialista_id}</td><td>${b.fecha_inicio}</td><td>${b.fecha_fin}</td>
+      <td>${b.hora_inicio||'—'} – ${b.hora_fin||'—'}</td><td>${b.motivo||'—'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="delBloqueo('${b.id}')">🗑</button></td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+async function saveBloqueo() {
+  const d = { especialista_id:$('blq-esp').value||'TODOS', fecha_inicio:$('blq-fd').value, fecha_fin:$('blq-fh').value, hora_inicio:$('blq-hd').value||null, hora_fin:$('blq-hh').value||null, motivo:$('blq-motivo').value };
+  const res = await apiFetch('saveBloqueo', d);
+  showMsg('form-blq-msg', res.ok ? '✅ Guardado' : res.error, res.ok ? 'ok' : 'err');
+  if (res.ok) loadBloqueos();
+}
+async function delBloqueo(id) {
+  await apiFetch('deleteBloqueo', { id }); loadBloqueos();
+}
+
+// ── CONTACTOS ─────────────────────────────────────────────────────────────────
+async function loadContactos() {
+  const q = $('busq-contacto').value;
+  const res = await apiFetch('getCrmContactos', q ? { q } : {});
+  if (!res.ok) return;
+  $('tabla-contactos').innerHTML = `<div class="tbl-wrap"><table>
+    <tr><th>Nombre</th><th>Teléfono</th><th>Estado</th><th>Reservas</th><th>Última</th><th></th></tr>
+    ${res.data.map(c => `<tr>
+      <td>${c.nombre||'—'}</td><td>${c.telefono}</td>
+      <td><span class="badge b-${c.estado}">${c.estado}</span></td>
+      <td>${c.total_reservas}</td><td>${c.ultima_reserva||'—'}</td>
+      <td><button class="btn btn-sm" onclick="verContacto('${c.id}','${c.nombre||''}','${c.telefono}')">👁</button></td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+function verContacto(id, nombre, tel) {
+  // Abrir conversaciones filtradas
+  mostrar('conversaciones');
+}
+
+// ── CONVERSACIONES ────────────────────────────────────────────────────────────
+async function loadConversaciones() {
+  const res = await apiFetch('getCrmConversaciones');
+  if (!res.ok) return;
+  $('lista-convs').innerHTML = res.data.map(c => `
+    <div class="card" style="cursor:pointer;margin-bottom:.5rem" onclick="verConv('${c.id}','${c.contacto_nombre||c.telefono}')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong>${c.contacto_nombre||'—'}</strong>
+        <span class="badge b-${c.estado}">${c.estado}</span>
+      </div>
+      <div style="font-size:.8rem;color:#6b7280;margin-top:.2rem">
+        📱 ${c.telefono} · ${c.total_mensajes} mensajes · bot: <em>${c.bot_estado}</em>
+      </div>
+    </div>`).join('');
+}
+async function verConv(id, nombre) {
+  const res = await apiFetch('getCrmMensajes', { conversacion_id: id });
+  if (!res.ok) return;
+  $('chat-panel').style.display = '';
+  $('chat-nombre').textContent = nombre;
+  $('chat-msgs').innerHTML = res.data.map(m =>
+    `<div class="chat-bubble ${m.direccion}" style="align-self:${m.direccion==='saliente'?'flex-end':'flex-start'}">
+      ${m.contenido||'[sin texto]'}
+      <div style="font-size:.7rem;opacity:.6;margin-top:.1rem">${m.creado?.slice(11,16)||''}</div>
+    </div>`).join('');
+  $('chat-msgs').scrollTop = $('chat-msgs').scrollHeight;
+}
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+async function loadConfig() {
+  const res = await apiFetch('getConfig');
+  if (!res.ok) return;
+  cfgCache = {};
+  res.data.forEach(r => cfgCache[r.clave] = { valor: r.valor, nota: r.nota });
+  $('cfg-grid').innerHTML = Object.entries(cfgCache).map(([k,v]) => `
+    <div class="card" style="padding:.9rem 1.1rem;margin-bottom:.6rem">
+      <label style="color:var(--c1);font-weight:700">${k}</label>
+      ${v.nota ? `<div style="font-size:.78rem;color:var(--muted);margin-bottom:.3rem">${v.nota}</div>` : ''}
+      ${k.startsWith('msg_')
+        ? `<textarea id="cfg-${k}" rows="3">${v.valor||''}</textarea>`
+        : `<input id="cfg-${k}" value="${(v.valor||'').replace(/"/g,'&quot;')}">`}
+    </div>`).join('');
+}
+async function saveConfig() {
+  const cambios = {};
+  Object.keys(cfgCache).forEach(k => {
+    const el = $(`cfg-${k}`);
+    if (el) cambios[k] = el.value;
+  });
+  const res = await apiFetch('saveConfig', { cambios: JSON.stringify(cambios) });
+  showMsg('form-cfg-msg', res.ok ? `✅ ${res.data.actualizadas} valores guardados` : res.error, res.ok ? 'ok' : 'err');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reservar turno</title>
+<style>
+:root {
+  --c1: #1B4332;
+  --c2: #B08947;
+  --ca: #E8DCC8;
+  --bg: #F9F5EF;
+  --text: #1a1a1a;
+  --muted: #6b7280;
+  --border: #d1cdc7;
+  --rad: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100vh; }
+header { background: var(--c1); color: #fff; padding: 1.2rem 1rem; text-align: center; }
+header h1 { font-size: 1.4rem; font-weight: 700; }
+header p  { font-size: .85rem; opacity: .8; margin-top: .2rem; }
+main { max-width: 520px; margin: 2rem auto; padding: 0 1rem 3rem; }
+.card { background: #fff; border-radius: var(--rad); padding: 1.5rem; box-shadow: 0 1px 6px rgba(0,0,0,.08); margin-bottom: 1rem; }
+h2 { font-size: 1rem; font-weight: 700; color: var(--c1); margin-bottom: 1rem; }
+label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: .3rem; color: var(--muted); }
+select, input, textarea {
+  width: 100%; padding: .7rem .9rem; border: 1px solid var(--border);
+  border-radius: 8px; font-size: .95rem; background: #fff; margin-bottom: .9rem;
+  transition: border-color .15s;
+}
+select:focus, input:focus, textarea:focus { outline: none; border-color: var(--c2); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.slot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-bottom: 1rem; }
+.slot { border: 1.5px solid var(--border); border-radius: 8px; padding: .55rem; text-align: center; font-size: .9rem; cursor: pointer; transition: .15s; background: #fff; }
+.slot:hover  { border-color: var(--c2); background: #faf6ef; }
+.slot.active { border-color: var(--c1); background: var(--c1); color: #fff; font-weight: 600; }
+.btn { display: block; width: 100%; padding: .85rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: .15s; }
+.btn-primary { background: var(--c1); color: #fff; }
+.btn-primary:hover { background: #14352a; }
+.btn-secondary { background: var(--ca); color: var(--c1); margin-top: .5rem; }
+.msg { padding: .7rem 1rem; border-radius: 8px; font-size: .9rem; margin-bottom: .9rem; }
+.msg-err { background: #fee2e2; color: #b91c1c; }
+.msg-ok  { background: #dcfce7; color: #15803d; }
+.step { display: none; }
+.step.active { display: block; }
+.nav-steps { display: flex; justify-content: center; gap: .3rem; margin-bottom: 1.5rem; }
+.step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: .2s; }
+.step-dot.done { background: var(--c2); }
+.step-dot.current { background: var(--c1); }
+.resumen { border: 1.5px solid var(--ca); border-radius: 8px; padding: 1rem; background: #faf6ef; margin-bottom: 1rem; font-size: .9rem; }
+.resumen p { margin-bottom: .3rem; }
+.resumen strong { color: var(--c1); }
+.esp-card { display: flex; align-items: center; gap: .75rem; padding: .75rem; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; margin-bottom: .5rem; transition: .15s; }
+.esp-card:hover  { border-color: var(--c2); }
+.esp-card.active { border-color: var(--c1); background: #f0faf4; }
+.esp-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.esp-inicial { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 1.1rem; flex-shrink: 0; }
+.srv-card { padding: .75rem 1rem; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; margin-bottom: .5rem; transition: .15s; }
+.srv-card:hover  { border-color: var(--c2); }
+.srv-card.active { border-color: var(--c1); background: #f0faf4; }
+.srv-titulo { font-weight: 700; }
+.srv-meta   { font-size: .8rem; color: var(--muted); margin-top: .15rem; }
+.fecha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: 1rem; }
+.fecha-btn { border: 1.5px solid var(--border); border-radius: 8px; padding: .6rem; text-align: center; font-size: .85rem; cursor: pointer; transition: .15s; background: #fff; }
+.fecha-btn:hover  { border-color: var(--c2); }
+.fecha-btn.active { border-color: var(--c1); background: var(--c1); color: #fff; }
+.spinner { text-align: center; padding: 2rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="hdr-nombre">Reservar turno</h1>
+  <p id="hdr-dir"></p>
+</header>
+<main>
+  <div class="nav-steps" id="nav-dots"></div>
+  <div id="msg-global"></div>
+
+  <!-- PASO 1: Servicio -->
+  <div class="card step active" id="step-1">
+    <h2>1. ¿Qué servicio necesitás?</h2>
+    <div id="lista-servicios"><div class="spinner">Cargando...</div></div>
+  </div>
+
+  <!-- PASO 2: Especialista -->
+  <div class="card step" id="step-2">
+    <h2>2. Elegí con quién</h2>
+    <div id="lista-especialistas"></div>
+    <button class="btn btn-secondary" onclick="irA(1)">← Volver</button>
+  </div>
+
+  <!-- PASO 3: Fecha -->
+  <div class="card step" id="step-3">
+    <h2>3. Elegí un día</h2>
+    <div id="lista-fechas"><div class="spinner">Buscando fechas...</div></div>
+    <button class="btn btn-secondary" onclick="irA(2)">← Volver</button>
+  </div>
+
+  <!-- PASO 4: Hora -->
+  <div class="card step" id="step-4">
+    <h2>4. Elegí un horario</h2>
+    <div id="lista-slots"><div class="spinner">Cargando horarios...</div></div>
+    <button class="btn btn-secondary" onclick="irA(3)">← Volver</button>
+  </div>
+
+  <!-- PASO 5: Datos personales -->
+  <div class="card step" id="step-5">
+    <h2>5. Tus datos</h2>
+    <div class="resumen" id="resumen-pre"></div>
+    <div id="msg-form"></div>
+    <label>Nombre completo *</label>
+    <input id="f-nombre" type="text" placeholder="Ej: María García">
+    <label>WhatsApp (con código de país) *</label>
+    <input id="f-tel" type="tel" placeholder="Ej: 5491112345678">
+    <label>Email (opcional)</label>
+    <input id="f-email" type="email" placeholder="tu@email.com">
+    <label>Notas (opcional)</label>
+    <textarea id="f-notas" rows="2" placeholder="Alguna aclaración..."></textarea>
+    <button class="btn btn-primary" onclick="confirmar()">Confirmar reserva ✅</button>
+    <button class="btn btn-secondary" onclick="irA(4)">← Volver</button>
+  </div>
+
+  <!-- PASO 6: Confirmación -->
+  <div class="card step" id="step-6">
+    <div style="text-align:center;margin-bottom:1.2rem">
+      <div style="font-size:3rem">🎉</div>
+      <h2 style="text-align:center;font-size:1.2rem;margin-top:.5rem">¡Reserva confirmada!</h2>
+    </div>
+    <div id="resumen-ok" class="resumen"></div>
+    <button class="btn btn-secondary" onclick="location.reload()">Hacer otra reserva</button>
+  </div>
+</main>
+
+<script>
+const API = '/api/agenda';
+let cfg = {}, servicios = [], especialistas = [];
+let sel = { servicio: null, especialista: null, fecha: null, hora: null };
+const TOTAL_PASOS = 6;
+
+function $(id) { return document.getElementById(id); }
+function showMsg(el, msg, tipo) {
+  el.innerHTML = msg ? `<div class="msg msg-${tipo}">${msg}</div>` : '';
+}
+
+async function init() {
+  const res = await fetch(`${API}?action=getDatosIniciales`).then(r=>r.json()).catch(()=>null);
+  if (!res?.ok) return showMsg($('msg-global'), 'Error cargando datos. Recargá la página.', 'err');
+  cfg = res.data.cfg;
+  servicios = res.data.servicios;
+  especialistas = res.data.especialistas;
+
+  $('hdr-nombre').textContent = cfg.negocio_nombre || 'Reservar turno';
+  $('hdr-dir').textContent = cfg.negocio_direccion || '';
+  document.title = cfg.negocio_nombre || 'Reservar turno';
+
+  renderServicios();
+  renderDots();
+}
+
+function renderDots() {
+  const c = $('nav-dots');
+  c.innerHTML = '';
+  for (let i = 1; i <= TOTAL_PASOS; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot';
+    d.id = `dot-${i}`;
+    c.appendChild(d);
+  }
+}
+
+function irA(n) {
+  document.querySelectorAll('.step').forEach((el,i) => el.classList.toggle('active', i+1 === n));
+  document.querySelectorAll('.step-dot').forEach((d,i) => {
+    d.className = 'step-dot' + (i+1 < n ? ' done' : i+1 === n ? ' current' : '');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderServicios() {
+  const cont = $('lista-servicios');
+  if (!servicios.length) { cont.innerHTML = '<p>No hay servicios disponibles.</p>'; return; }
+  cont.innerHTML = servicios.map(s => `
+    <div class="srv-card" onclick="elegirServicio('${s.id}')">
+      <div class="srv-titulo">${s.nombre}</div>
+      <div class="srv-meta">${s.duracion_minutos} min · ${cfg.moneda||'$'}${s.precio}</div>
+      ${s.descripcion ? `<div class="srv-meta" style="margin-top:.2rem">${s.descripcion}</div>` : ''}
+    </div>`).join('');
+}
+
+function elegirServicio(id) {
+  sel.servicio = servicios.find(s => s.id === id);
+  document.querySelectorAll('.srv-card').forEach(c => c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  // Si hay un solo especialista, saltear ese paso
+  const espsDelSrv = sel.servicio.especialista_id
+    ? especialistas.filter(e => e.id === sel.servicio.especialista_id)
+    : especialistas;
+
+  setTimeout(() => {
+    if (espsDelSrv.length === 1) {
+      sel.especialista = espsDelSrv[0];
+      irA(3);
+      cargarFechas();
+    } else {
+      renderEspecialistas(espsDelSrv);
+      irA(2);
+    }
+  }, 150);
+}
+
+function renderEspecialistas(esps) {
+  $('lista-especialistas').innerHTML = esps.map(e => {
+    const avatar = e.foto_url
+      ? `<img class="esp-avatar" src="${e.foto_url}" alt="${e.nombre}">`
+      : `<div class="esp-inicial" style="background:${e.color||'#1B4332'}">${e.nombre[0]}</div>`;
+    return `<div class="esp-card" onclick="elegirEspecialista('${e.id}')">
+      ${avatar}<span>${e.nombre}</span>
+    </div>`;
+  }).join('');
+}
+
+function elegirEspecialista(id) {
+  sel.especialista = especialistas.find(e => e.id === id);
+  event.currentTarget.classList.add('active');
+  setTimeout(() => { irA(3); cargarFechas(); }, 150);
+}
+
+async function cargarFechas() {
+  $('lista-fechas').innerHTML = '<div class="spinner">Buscando fechas disponibles...</div>';
+  const params = new URLSearchParams({ action: 'getDisponibilidad', especialista_id: sel.especialista.id, servicio_id: sel.servicio.id, fecha: '' });
+  // Buscar próximas fechas disponibles (hasta 14 días)
+  const maxDias = Math.min(Number(cfg.dias_max_anticipacion) || 30, 30);
+  const hoy = new Date();
+  const fechas = [];
+  for (let i = 0; i < maxDias && fechas.length < 8; i++) {
+    const d = new Date(hoy); d.setDate(hoy.getDate() + i);
+    const iso = d.toLocaleDateString('en-CA');
+    const res = await fetch(`${API}?action=getDisponibilidad&especialista_id=${sel.especialista.id}&servicio_id=${sel.servicio.id}&fecha=${iso}`).then(r=>r.json()).catch(()=>null);
+    if (res?.ok && res.data.slots.length) fechas.push(iso);
+  }
+  if (!fechas.length) {
+    $('lista-fechas').innerHTML = '<p style="color:#6b7280">No hay disponibilidad en los próximos días.</p>';
+    return;
+  }
+  const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  $('lista-fechas').innerHTML = `<div class="fecha-grid">${fechas.map(f => {
+    const d = new Date(f + 'T12:00:00');
+    return `<div class="fecha-btn" onclick="elegirFecha('${f}',this)">${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}</div>`;
+  }).join('')}</div>`;
+}
+
+async function elegirFecha(fecha, el) {
+  sel.fecha = fecha;
+  document.querySelectorAll('.fecha-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  await cargarSlots(fecha);
+  setTimeout(() => irA(4), 150);
+}
+
+async function cargarSlots(fecha) {
+  $('lista-slots').innerHTML = '<div class="spinner">Cargando horarios...</div>';
+  const res = await fetch(`${API}?action=getDisponibilidad&especialista_id=${sel.especialista.id}&servicio_id=${sel.servicio.id}&fecha=${fecha}`).then(r=>r.json()).catch(()=>null);
+  if (!res?.ok || !res.data.slots.length) {
+    $('lista-slots').innerHTML = '<p>No hay turnos disponibles ese día.</p>';
+    return;
+  }
+  sel.hora = null;
+  $('lista-slots').innerHTML = `<div class="slot-grid">${res.data.slots.map(h =>
+    `<div class="slot" onclick="elegirSlot('${h}',this)">${h}</div>`
+  ).join('')}</div>`;
+}
+
+function elegirSlot(hora, el) {
+  sel.hora = hora;
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  const DIAS_ES = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const d = new Date(sel.fecha + 'T12:00:00');
+  $('resumen-pre').innerHTML = `
+    <p>📋 <strong>${sel.servicio.nombre}</strong></p>
+    <p>👤 ${sel.especialista.nombre}</p>
+    <p>📅 ${DIAS_ES[d.getDay()]} ${d.getDate()} de ${MESES_ES[d.getMonth()]}</p>
+    <p>🕐 ${sel.hora}</p>
+    <p>💰 ${cfg.moneda||'$'}${sel.servicio.precio}</p>`;
+  setTimeout(() => irA(5), 150);
+}
+
+async function confirmar() {
+  const nombre = $('f-nombre').value.trim();
+  const tel    = $('f-tel').value.trim().replace(/\D/g,'');
+  const email  = $('f-email').value.trim();
+  const notas  = $('f-notas').value.trim();
+  if (!nombre) return showMsg($('msg-form'), 'Ingresá tu nombre.', 'err');
+  if (tel.length < 8) return showMsg($('msg-form'), 'Ingresá tu WhatsApp con código de país.', 'err');
+  showMsg($('msg-form'), '', '');
+  const body = { action:'crearReserva', especialista_id: sel.especialista.id, servicio_id: sel.servicio.id, fecha: sel.fecha, hora: sel.hora, nombre, telefono: tel, email: email||undefined, notas: notas||undefined, origen:'web' };
+  const res = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }).then(r=>r.json()).catch(()=>null);
+  if (!res?.ok) return showMsg($('msg-form'), res?.error || 'Error al reservar.', 'err');
+  const r = res.data;
+  const DIAS_ES = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const d = new Date(r.fecha + 'T12:00:00');
+  $('resumen-ok').innerHTML = `
+    <p>📋 <strong>${r.resumen.servicio}</strong></p>
+    <p>👤 ${r.resumen.especialista}</p>
+    <p>📅 ${DIAS_ES[d.getDay()]} ${d.getDate()} de ${MESES_ES[d.getMonth()]}</p>
+    <p>🕐 ${r.hora_inicio} – ${r.hora_fin}</p>
+    <p>💰 ${r.resumen.moneda}${r.resumen.precio}</p>
+    <p style="margin-top:.5rem">🔖 Código: <strong>${r.codigo}</strong></p>`;
+  irA(6);
+}
+
+init();
+</script>
+</body>
+</html>
