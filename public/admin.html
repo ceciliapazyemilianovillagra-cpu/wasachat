@@ -313,11 +313,11 @@ const LOADERS = {
   horarios: loadHorarios, bloqueos: loadBloqueos,
   contactos: loadContactos, conversaciones: loadConversaciones, config: loadConfig
 };
-function mostrar(tab) {
+function mostrar(tab, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
-  $(`tab-${tab}`).classList.add('active');
-  event?.currentTarget?.classList.add('active');
+  $(`tab-${tab}`)?.classList.add('active');
+  (el || (typeof event !== 'undefined' && event?.currentTarget))?.classList?.add('active');
   if (LOADERS[tab]) LOADERS[tab]();
 }
 
