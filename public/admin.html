@@ -98,7 +98,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c
   <a onclick="mostrar('bloqueos')">🚫 Bloqueos</a>
   <div class="section">CRM</div>
   <a onclick="mostrar('contactos')">💬 Contactos</a>
-  <a onclick="mostrar('conversaciones')">🤖 Conversaciones</a>
+  <a onclick="mostrar('conversaciones',this)">🤖 Conversaciones <span id="nav-badge-conv" style="background:#ef4444;color:#fff;border-radius:999px;font-size:.7rem;padding:.1rem .4rem;margin-left:.2rem"></span></a>
   <div class="section">Sistema</div>
   <a onclick="mostrar('config')">⚙️ Configuración</a>
   <a onclick="logout()" style="margin-top:auto">🚪 Salir</a>
@@ -240,15 +240,30 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c
 
 <!-- CONVERSACIONES -->
 <div class="tab" id="tab-conversaciones">
-  <h1>Conversaciones WhatsApp</h1>
-  <div class="card">
-    <button class="btn btn-primary btn-sm" onclick="loadConversaciones()">🔄 Actualizar</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <h1 style="margin:0">Bandeja WhatsApp <span id="badge-nuevos" style="display:none;background:var(--c1);color:#fff;border-radius:999px;font-size:.75rem;padding:.15rem .55rem;margin-left:.4rem;vertical-align:middle"></span></h1>
+    <div style="display:flex;align-items:center;gap:.6rem">
+      <span id="inbox-status" style="font-size:.8rem;color:var(--muted)">⏳ cargando…</span>
+      <button class="btn btn-primary btn-sm" onclick="loadConversaciones(true)">🔄 Actualizar</button>
+    </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-    <div id="lista-convs"></div>
-    <div id="chat-panel" class="card" style="display:none">
-      <h2 id="chat-nombre"></h2>
-      <div class="chat-box" id="chat-msgs"></div>
+  <div style="display:grid;grid-template-columns:320px 1fr;gap:1rem;height:calc(100vh - 180px)">
+    <!-- lista -->
+    <div style="overflow-y:auto;display:flex;flex-direction:column;gap:.5rem" id="lista-convs"></div>
+    <!-- chat -->
+    <div id="chat-panel" class="card" style="display:flex;flex-direction:column;padding:0;overflow:hidden">
+      <div style="padding:.8rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.7rem">
+        <div>
+          <strong id="chat-nombre" style="font-size:1rem"></strong>
+          <div id="chat-tel" style="font-size:.78rem;color:var(--muted)"></div>
+        </div>
+        <span id="chat-bot-estado" class="badge" style="margin-left:auto"></span>
+      </div>
+      <div class="chat-box" id="chat-msgs" style="flex:1;overflow-y:auto;padding:1rem"></div>
+      <div style="padding:.7rem;border-top:1px solid var(--border);display:flex;gap:.5rem" id="reply-bar">
+        <input id="reply-input" placeholder="Escribir respuesta…" style="flex:1" onkeydown="if(event.key==='Enter')enviarReply()">
+        <button class="btn btn-primary btn-sm" onclick="enviarReply()">Enviar ▶</button>
+      </div>
     </div>
   </div>
 </div>
@@ -539,32 +554,120 @@ function verContacto(id, nombre, tel) {
 }
 
 // ── CONVERSACIONES ────────────────────────────────────────────────────────────
-async function loadConversaciones() {
+let convActiva = null;
+let convTimer  = null;
+let convCache  = [];
+
+async function loadConversaciones(manual = false) {
   const res = await apiFetch('getCrmConversaciones');
-  if (!res.ok) return;
-  $('lista-convs').innerHTML = res.data.map(c => `
-    <div class="card" style="cursor:pointer;margin-bottom:.5rem" onclick="verConv('${c.id}','${c.contacto_nombre||c.telefono}')">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <strong>${c.contacto_nombre||'—'}</strong>
-        <span class="badge b-${c.estado}">${c.estado}</span>
+  if (!res.ok) { $('inbox-status').textContent = '❌ error'; return; }
+  const lista = res.data;
+  const prevIds = new Set(convCache.map(c => c.id));
+  const nuevas  = lista.filter(c => !prevIds.has(c.id));
+  convCache = lista;
+
+  // badge en nav
+  const noLeidos = lista.filter(c => c.estado === 'activo').length;
+  const badgeNav = $('nav-badge-conv');
+  if (badgeNav) badgeNav.textContent = noLeidos > 0 ? noLeidos : '';
+  const badgeTit = $('badge-nuevos');
+  if (noLeidos > 0) { badgeTit.textContent = noLeidos + ' sin resolver'; badgeTit.style.display = ''; }
+  else badgeTit.style.display = 'none';
+
+  // notificación si llegaron nuevas
+  if (manual && nuevas.length > 0) {
+    if (Notification.permission === 'granted')
+      new Notification('WASACHAT', { body: `${nuevas.length} conversación(es) nueva(s)` });
+  }
+
+  renderLista(lista);
+  const ahora = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+  $('inbox-status').textContent = `✅ actualizado ${ahora}`;
+
+  // si hay conv activa, refrescar mensajes silenciosamente
+  if (convActiva) {
+    const msgBox = $('chat-msgs');
+    const atBottom = msgBox.scrollHeight - msgBox.scrollTop - msgBox.clientHeight < 40;
+    const r2 = await apiFetch('getCrmMensajes', { conversacion_id: convActiva });
+    if (r2.ok) {
+      renderMensajes(r2.data);
+      if (atBottom) msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+}
+
+function renderLista(lista) {
+  $('lista-convs').innerHTML = lista.map(c => `
+    <div class="card" style="cursor:pointer;padding:.75rem 1rem;border-left:3px solid ${c.id===convActiva?'var(--c1)':'transparent'};${c.estado==='activo'?'font-weight:600':''}"
+         onclick="verConv('${c.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem">
+        <span>${c.contacto_nombre||'Desconocido'}</span>
+        <span class="badge b-${c.estado}" style="font-size:.7rem">${c.estado}</span>
       </div>
-      <div style="font-size:.8rem;color:#6b7280;margin-top:.2rem">
-        📱 ${c.telefono} · ${c.total_mensajes} mensajes · bot: <em>${c.bot_estado}</em>
+      <div style="font-size:.78rem;color:var(--muted);display:flex;gap:.6rem">
+        <span>📱 ${c.telefono}</span>
+        <span>💬 ${c.total_mensajes}</span>
+        <span>🤖 ${c.bot_estado}</span>
+      </div>
+      <div style="font-size:.74rem;color:var(--muted);margin-top:.2rem">${c.ultimo_mensaje ? new Date(c.ultimo_mensaje).toLocaleString('es-AR') : ''}</div>
+    </div>`).join('') || '<div style="color:var(--muted);padding:1rem">Sin conversaciones aún</div>';
+}
+
+function renderMensajes(msgs) {
+  $('chat-msgs').innerHTML = msgs.map(m => `
+    <div style="display:flex;flex-direction:column;align-items:${m.direccion==='saliente'?'flex-end':'flex-start'};margin-bottom:.6rem">
+      <div class="chat-bubble ${m.direccion}" style="max-width:75%">
+        ${(m.contenido||'[sin texto]').replace(/\n/g,'<br>')}
+        <div style="font-size:.68rem;opacity:.55;margin-top:.2rem;text-align:right">${m.creado ? new Date(m.creado).toLocaleString('es-AR') : ''}</div>
       </div>
     </div>`).join('');
 }
-async function verConv(id, nombre) {
+
+async function verConv(id) {
+  convActiva = id;
+  const conv = convCache.find(c => c.id === id);
+  $('chat-nombre').textContent = conv?.contacto_nombre || 'Desconocido';
+  $('chat-tel').textContent    = conv ? `📱 ${conv.telefono}` : '';
+  const badgeBot = $('chat-bot-estado');
+  badgeBot.textContent  = conv ? `🤖 ${conv.bot_estado}` : '';
+  badgeBot.className    = `badge b-${conv?.estado||''}`;
+  $('chat-panel').style.display = 'flex';
+  renderLista(convCache); // actualiza borde activo
+
   const res = await apiFetch('getCrmMensajes', { conversacion_id: id });
   if (!res.ok) return;
-  $('chat-panel').style.display = '';
-  $('chat-nombre').textContent = nombre;
-  $('chat-msgs').innerHTML = res.data.map(m =>
-    `<div class="chat-bubble ${m.direccion}" style="align-self:${m.direccion==='saliente'?'flex-end':'flex-start'}">
-      ${m.contenido||'[sin texto]'}
-      <div style="font-size:.7rem;opacity:.6;margin-top:.1rem">${m.creado?.slice(11,16)||''}</div>
-    </div>`).join('');
+  renderMensajes(res.data);
   $('chat-msgs').scrollTop = $('chat-msgs').scrollHeight;
 }
+
+async function enviarReply() {
+  const input = $('reply-input');
+  const texto = input.value.trim();
+  if (!texto || !convActiva) return;
+  const conv = convCache.find(c => c.id === convActiva);
+  if (!conv) return;
+  input.value = '';
+  input.disabled = true;
+  // llamamos al webhook de salida directamente via la API de agenda (acción sendWA)
+  const res = await apiFetch('sendWhatsApp', { telefono: conv.telefono, mensaje: texto, conversacion_id: convActiva });
+  input.disabled = false;
+  if (!res.ok) { alert('Error al enviar: ' + res.error); return; }
+  await verConv(convActiva);
+  $('chat-msgs').scrollTop = $('chat-msgs').scrollHeight;
+}
+
+// auto-refresh cada 15 seg cuando la tab está visible
+function iniciarAutoRefresh() {
+  clearInterval(convTimer);
+  convTimer = setInterval(() => {
+    if (document.visibilityState === 'visible' && $('tab-conversaciones')?.classList.contains('active'))
+      loadConversaciones();
+  }, 15000);
+}
+iniciarAutoRefresh();
+
+// pedir permiso de notificaciones
+if (Notification.permission === 'default') Notification.requestPermission();
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 async function loadConfig() {

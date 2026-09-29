@@ -12,7 +12,7 @@ const ACCIONES_ADMIN = new Set([
   'listHorarios','saveHorario','deleteHorario',
   'listBloqueos','saveBloqueo','deleteBloqueo',
   'getMetricas','getCrmContactos','getCrmConversaciones','getCrmMensajes',
-  'updateContacto',
+  'updateContacto','sendWhatsApp',
 ]);
 
 export default async function handler(req, res) {
@@ -269,7 +269,7 @@ export default async function handler(req, res) {
 
       case 'getCrmConversaciones': {
         data = await sql`
-          SELECT conv.id::text, conv.estado, conv.bot_estado, conv.ultimo_msg::text,
+          SELECT conv.id::text, conv.estado, conv.bot_estado, conv.ultimo_msg::text AS ultimo_mensaje,
                  c.nombre AS contacto_nombre, c.telefono,
                  (SELECT count(*)::int FROM wa_mensajes m WHERE m.conversacion_id=conv.id) AS total_mensajes
           FROM wa_conversaciones conv
@@ -284,6 +284,30 @@ export default async function handler(req, res) {
           SELECT id::text, direccion, tipo, contenido, creado::text
           FROM wa_mensajes WHERE conversacion_id=${p.conversacion_id}
           ORDER BY creado ASC`;
+        break;
+      }
+
+      case 'sendWhatsApp': {
+        if (!p.telefono || !p.mensaje) throw Error('Falta telefono o mensaje');
+        const PHONE_ID = process.env.WA_PHONE_NUMBER_ID;
+        const TOKEN    = process.env.WA_ACCESS_TOKEN;
+        if (!PHONE_ID || !TOKEN) throw Error('Variables WA no configuradas');
+        const waRes = await fetch(`https://graph.facebook.com/v21.0/${PHONE_ID}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN}` },
+          body: JSON.stringify({ messaging_product: 'whatsapp', to: p.telefono, type: 'text', text: { body: p.mensaje } }),
+        });
+        if (!waRes.ok) {
+          const err = await waRes.json().catch(() => ({}));
+          throw Error(err?.error?.message || 'Error al enviar por WhatsApp');
+        }
+        // guardar en DB si hay conversacion_id
+        if (p.conversacion_id) {
+          await sql`INSERT INTO wa_mensajes (conversacion_id, direccion, tipo, contenido)
+                    VALUES (${p.conversacion_id}, 'saliente', 'text', ${p.mensaje})`;
+          await sql`UPDATE wa_conversaciones SET ultimo_msg=now() WHERE id=${p.conversacion_id}`;
+        }
+        data = { enviado: true };
         break;
       }
 
