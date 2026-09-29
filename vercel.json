@@ -2,6 +2,7 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/api/agenda", "destination": "/api/agenda.js" },
+    { "source": "/api/whatsapp-webhook", "destination": "/api/whatsapp-webhook.js" },
     { "source": "/api/waha-webhook", "destination": "/api/waha-webhook.js" }
   ],
   "headers": [
