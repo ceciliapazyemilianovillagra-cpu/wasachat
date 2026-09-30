@@ -261,16 +261,19 @@ export default async function handler(req, res) {
 
   try {
     const body = typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
+    console.log('[WA-IN]', JSON.stringify(body).slice(0, 500));
 
     // Confirmar recepción a Meta inmediatamente
     res.status(200).json({ status: 'ok' });
 
     const entry   = body.entry?.[0];
     const changes = entry?.changes?.[0];
+    console.log('[WA-FIELD]', changes?.field);
     if (changes?.field !== 'messages') return;
 
     const value   = changes.value;
     const message = value?.messages?.[0];
+    console.log('[WA-MSG]', message?.type, message?.from);
     if (!message) return;
 
     // Solo procesar mensajes de texto
@@ -303,6 +306,6 @@ export default async function handler(req, res) {
 
     await sql.end();
   } catch (e) {
-    console.error('[whatsapp-webhook]', e.message);
+    console.error('[WA-ERROR]', e.message, e.stack);
   }
 }
