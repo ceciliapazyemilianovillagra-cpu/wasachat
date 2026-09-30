@@ -287,15 +287,21 @@ export default async function handler(req, res) {
     if (!texto || !from) return;
 
     const sql = db();
+    console.log('[WA-DB] connecting...');
     await sql`SET timezone='America/Argentina/Buenos_Aires'`;
     const cfg = await getCfg(sql);
+    console.log('[WA-CFG] ok');
 
     const contacto = await upsertContacto(sql, from, nombre);
+    console.log('[WA-CONTACT]', contacto?.id);
     const conv     = await getOrCreateConv(sql, contacto.id);
+    console.log('[WA-CONV]', conv?.id, conv?.bot_estado);
 
     await guardarMsg(sql, conv.id, waId, 'entrante', texto);
+    console.log('[WA-SAVED]');
 
     const { msgs, estado, nCtx } = await procesarBot(sql, cfg, from, contacto.nombre || nombre, texto, conv);
+    console.log('[WA-BOT]', estado, msgs.length, 'msgs');
 
     await setBotEstado(sql, conv.id, estado, nCtx);
 
@@ -303,9 +309,10 @@ export default async function handler(req, res) {
       await enviarMensaje(from, m);
       await guardarMsg(sql, conv.id, null, 'saliente', m);
     }
+    console.log('[WA-DONE]');
 
     await sql.end();
   } catch (e) {
-    console.error('[WA-ERROR]', e.message, e.stack);
+    console.error('[WA-ERROR]', e.message, e.stack?.slice(0,300));
   }
 }
