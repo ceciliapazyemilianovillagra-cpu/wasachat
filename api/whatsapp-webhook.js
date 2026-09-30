@@ -297,15 +297,10 @@ export default async function handler(req, res) {
     await guardarMsg(sql, conv.id, waId, 'entrante', texto);
     console.log('[WA-SAVED]');
 
-    const { msgs, estado, nCtx } = await procesarBot(sql, cfg, from, contacto.nombre || nombre, texto, conv);
-    console.log('[WA-BOT]', estado, msgs.length, 'msgs');
-
-    await setBotEstado(sql, conv.id, estado, nCtx);
-
-    for (const m of msgs) {
-      await enviarMensaje(from, m);
-      await guardarMsg(sql, conv.id, null, 'saliente', m);
-    }
+    const nombreContacto = contacto.nombre || nombre || 'amigo/a';
+    const respuesta = `Hola ${nombreContacto}\nSoy Pulso Creativo\nSERVICIO DE AVISO POR WHATSAPP\nen caso de consultas o reclamos dirigirse al mail info@soypulsocreativo.com.ar`;
+    await enviarMensaje(from, respuesta);
+    await guardarMsg(sql, conv.id, null, 'saliente', respuesta);
     console.log('[WA-DONE]');
 
     await sql.end();
