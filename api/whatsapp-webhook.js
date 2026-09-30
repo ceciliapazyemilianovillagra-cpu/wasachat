@@ -263,9 +263,6 @@ export default async function handler(req, res) {
     const body = typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
     console.log('[WA-IN]', JSON.stringify(body).slice(0, 500));
 
-    // Confirmar recepción a Meta inmediatamente
-    res.status(200).json({ status: 'ok' });
-
     const entry   = body.entry?.[0];
     const changes = entry?.changes?.[0];
     console.log('[WA-FIELD]', changes?.field);
@@ -315,4 +312,7 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error('[WA-ERROR]', e.message, e.stack?.slice(0,300));
   }
+  console.log('[WA-DONE]');
+  // Responder al final: Vercel/Lambda termina la función cuando res es enviado
+  res.status(200).json({ status: 'ok' });
 }
