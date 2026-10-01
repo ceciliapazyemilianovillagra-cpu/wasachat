@@ -6,18 +6,14 @@
       "schedule": "0 13 * * *"
     }
   ],
-  "rewrites": {
-    "afterFiles": [
-      { "source": "/api/agenda", "destination": "/api/agenda.js" },
-      { "source": "/api/whatsapp-webhook", "destination": "/api/whatsapp-webhook.js" },
-      { "source": "/api/waha-webhook", "destination": "/api/waha-webhook.js" },
-      { "source": "/api/negocio-publico", "destination": "/api/negocio-publico.js" },
-      { "source": "/api/cron-recordatorios", "destination": "/api/cron-recordatorios.js" }
-    ],
-    "fallback": [
-      { "source": "/:slug", "destination": "/negocio.html" }
-    ]
-  },
+  "rewrites": [
+    { "source": "/api/agenda", "destination": "/api/agenda.js" },
+    { "source": "/api/whatsapp-webhook", "destination": "/api/whatsapp-webhook.js" },
+    { "source": "/api/waha-webhook", "destination": "/api/waha-webhook.js" },
+    { "source": "/api/negocio-publico", "destination": "/api/negocio-publico.js" },
+    { "source": "/api/cron-recordatorios", "destination": "/api/cron-recordatorios.js" },
+    { "source": "/:slug", "destination": "/negocio.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -31,7 +27,7 @@
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,x-admin-secret,x-negocio-token" }
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,x-admin-secret" }
       ]
     }
   ]
