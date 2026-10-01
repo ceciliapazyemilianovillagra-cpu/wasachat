@@ -288,7 +288,6 @@ export default async function handler(req, res) {
 
     const sql = db();
     await sql`SET timezone='America/Argentina/Buenos_Aires'`;
-    const cfg = await getCfg(sql);
 
     const contacto = await upsertContacto(sql, from, nombre);
     const conv     = await getOrCreateConv(sql, contacto.id);
@@ -297,9 +296,43 @@ export default async function handler(req, res) {
     const esTurno = incomingPhoneId === PHONE_NUMBER_ID_TURNO;
 
     if (esTurno) {
-      // Número de turnos → chatbot completo
+      // Detectar slug del negocio en el primer mensaje (ej: "turno:peluqueria-marta")
+      const slugMatch = texto.trim().match(/^turno:([a-z0-9_-]+)/i);
+      let negocioId = conv.bot_contexto?.negocio_id || null;
+
+      if (slugMatch) {
+        const slug = slugMatch[1].toLowerCase();
+        const neg = await sql`SELECT id::text, nombre, owner_whatsapp FROM negocios WHERE slug=${slug} AND activo=true LIMIT 1`;
+        if (neg.length) {
+          negocioId = neg[0].id;
+          // Guardar negocio_id en la conversación para los mensajes siguientes
+          await sql`UPDATE wa_conversaciones SET negocio_id=${negocioId}, bot_estado='inicio', bot_contexto=${JSON.stringify({negocio_id: negocioId, negocio_nombre: neg[0].nombre})} WHERE id=${conv.id}`;
+          conv.bot_estado = 'inicio';
+          conv.bot_contexto = { negocio_id: negocioId, negocio_nombre: neg[0].nombre };
+        }
+      }
+
+      // Cargar config del negocio correcto
+      const cfg = negocioId
+        ? await (async () => {
+            const rows = await sql`SELECT clave, valor FROM agenda_config WHERE negocio_id=${negocioId}`;
+            const c = {}; for (const r of rows) c[r.clave] = r.valor; return c;
+          })()
+        : await getCfg(sql);
+
       const { msgs, estado, nCtx } = await procesarBot(sql, cfg, from, contacto.nombre || nombre, texto, conv);
-      await setBotEstado(sql, conv.id, estado, nCtx);
+      await setBotEstado(sql, conv.id, estado, { ...nCtx, negocio_id: negocioId });
+
+      // Notificar al dueño cuando se confirma reserva
+      if (estado === 'completado' && negocioId) {
+        const negRow = await sql`SELECT owner_whatsapp, nombre FROM negocios WHERE id=${negocioId} LIMIT 1`;
+        if (negRow.length && negRow[0].owner_whatsapp) {
+          const clienteNombre = contacto.nombre || nombre || 'Cliente';
+          const aviso = `🔔 *Nueva reserva en ${negRow[0].nombre}*\n👤 ${clienteNombre} (${from})\n📋 ${nCtx.servicio?.nombre || ''}\n📅 ${nCtx.fecha || ''} ${nCtx.hora || ''}`;
+          await enviarMensaje(negRow[0].owner_whatsapp, aviso, PHONE_NUMBER_ID_TURNO);
+        }
+      }
+
       for (const m of msgs) {
         await enviarMensaje(from, m, PHONE_NUMBER_ID_TURNO);
         await guardarMsg(sql, conv.id, null, 'saliente', m);
