@@ -75,7 +75,8 @@ nav {
   transition: color .15s;
 }
 .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.tab-icon { font-size: 1.1rem; display: block; margin-bottom: .15rem; }
+.tab-icon { display: flex; justify-content: center; margin-bottom: .2rem; }
+.tab-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ── VISTAS ── */
 .vista { display: none; padding: 1rem; max-width: 600px; margin: 0 auto; }
@@ -147,7 +148,8 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 
 /* ── VACÍO ── */
 .empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: .9rem; }
-.empty-icon { font-size: 2rem; margin-bottom: .5rem; }
+.empty-icon { display: flex; justify-content: center; margin-bottom: .75rem; }
+.empty-icon svg { width: 36px; height: 36px; stroke: var(--border); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ── HORARIO ── */
 .horario-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; flex-wrap: wrap; }
@@ -196,29 +198,54 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 <div id="v-app" style="display:none">
   <nav>
     <div>
-      <div class="nav-titulo">📅 Mi Agenda</div>
+      <div class="nav-titulo" style="display:flex;align-items:center;gap:.45rem">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Mi Agenda
+      </div>
       <div class="nav-negocio" id="nav-nombre"></div>
     </div>
-    <button class="nav-logout" onclick="logout()">Salir</button>
+    <button class="nav-logout" onclick="logout()" style="display:inline-flex;align-items:center;gap:.35rem">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Salir
+    </button>
   </nav>
 
   <div class="tabbar">
-    <button class="tab active" onclick="ir('turnos',this)"><span class="tab-icon">📋</span>Turnos</button>
-    <button class="tab" onclick="ir('horarios',this)"><span class="tab-icon">🕐</span>Horarios</button>
-    <button class="tab" onclick="ir('profesionales',this)"><span class="tab-icon">👤</span>Personal</button>
-    <button class="tab" onclick="ir('negocio',this)"><span class="tab-icon">⚙️</span>Mi negocio</button>
+    <button class="tab active" onclick="ir('turnos',this)">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span>
+      Turnos
+    </button>
+    <button class="tab" onclick="ir('horarios',this)">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></span>
+      Horarios
+    </button>
+    <button class="tab" onclick="ir('profesionales',this)">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
+      Personal
+    </button>
+    <button class="tab" onclick="ir('negocio',this)">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"/></svg></span>
+      Mi negocio
+    </button>
   </div>
 
   <!-- TURNOS -->
   <div id="tab-turnos" class="vista active">
     <div id="pausa-banner" class="pausa-banner" style="display:none">
-      <span class="pausa-txt">⏸ Turnos pausados</span>
+      <span class="pausa-txt" style="display:flex;align-items:center;gap:.4rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        Turnos pausados
+      </span>
       <button class="btn btn-ok" onclick="togglePausa(false)">Reactivar</button>
     </div>
     <div class="fecha-nav">
-      <button onclick="cambiarFecha(-1)">◀</button>
+      <button onclick="cambiarFecha(-1)" aria-label="Día anterior">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
       <div class="fecha-label" id="fecha-label">Hoy</div>
-      <button onclick="cambiarFecha(1)">▶</button>
+      <button onclick="cambiarFecha(1)" aria-label="Día siguiente">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
     <div id="lista-turnos"><div class="loading">Cargando...</div></div>
   </div>
@@ -274,13 +301,19 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
       <input type="password" id="neg-clave" placeholder="Nueva contraseña">
       <div style="margin-top:1rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="guardarNegocio()">Guardar cambios</button>
-        <button class="btn btn-cancel" onclick="togglePausa(true)" id="btn-pausar">Pausar turnos</button>
+        <button class="btn btn-cancel" onclick="togglePausa(true)" id="btn-pausar" style="display:inline-flex;align-items:center;gap:.35rem">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          Pausar turnos
+        </button>
       </div>
     </div>
     <div class="sec-titulo">URL para tus redes</div>
     <div class="card">
       <div id="url-publica" style="font-size:.85rem;word-break:break-all;color:var(--accent)"></div>
-      <button class="btn btn-ghost" style="margin-top:.6rem;font-size:.78rem" onclick="copiarUrl()">📋 Copiar link</button>
+      <button class="btn btn-ghost" style="margin-top:.6rem;font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem" onclick="copiarUrl()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copiar link
+      </button>
     </div>
   </div>
 </div>
@@ -391,7 +424,7 @@ async function cargarTurnos() {
 
   const turnos = (r.data || []).filter(t => t.fecha === fechaActual);
   if (!turnos.length) {
-    $('lista-turnos').innerHTML = `<div class="empty"><div class="empty-icon">📭</div>Sin turnos para este día</div>`;
+    $('lista-turnos').innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/></svg></div>Sin turnos para este día</div>`;
     return;
   }
 
@@ -403,15 +436,15 @@ async function cargarTurnos() {
           <div class="turno-hora">${t.hora_inicio?.slice(0,5)}</div>
           <div class="turno-nombre">${t.cliente_nombre}</div>
           <div class="turno-detalle">${t.servicio || '—'} · ${t.especialista || '—'}</div>
-          ${t.cliente_telefono ? `<div class="turno-detalle">📱 ${t.cliente_telefono}</div>` : ''}
+          ${t.cliente_telefono ? `<div class="turno-detalle" style="display:flex;align-items:center;gap:.3rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.0 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>${t.cliente_telefono}</div>` : ''}
         </div>
         <span class="badge badge-${t.estado}">${t.estado}</span>
       </div>
       ${t.estado !== 'cancelada' && t.estado !== 'completada' ? `
       <div class="acciones">
-        ${t.estado === 'pendiente' ? `<button class="btn btn-ok" onclick="cambiarEstado('${t.id}','confirmada')">✓ Confirmar</button>` : ''}
-        <button class="btn btn-cancel" onclick="cambiarEstado('${t.id}','cancelada')">✕ Cancelar</button>
-        <button class="btn btn-ghost" onclick="cambiarEstado('${t.id}','completada')">✔ Completar</button>
+        ${t.estado === 'pendiente' ? `<button class="btn btn-ok" onclick="cambiarEstado('${t.id}','confirmada')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Confirmar</button>` : ''}
+        <button class="btn btn-cancel" onclick="cambiarEstado('${t.id}','cancelada')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cancelar</button>
+        <button class="btn btn-ghost" onclick="cambiarEstado('${t.id}','completada')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Completar</button>
       </div>` : ''}
     </div>
   `).join('');
@@ -446,7 +479,7 @@ async function cargarHorarios() {
     }
     html += `</div>`;
   }
-  if (!esps.length) html = `<div class="empty"><div class="empty-icon">👤</div>Primero agregá un profesional</div>`;
+  if (!esps.length) html = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>Primero agregá un profesional</div>`;
   $('lista-horarios').innerHTML = html;
 
   // bloqueos
@@ -495,10 +528,12 @@ async function cargarProfesionales() {
       </div>
       <div style="display:flex;gap:.4rem;align-items:center">
         <label class="toggle"><input type="checkbox" ${e.activo ? 'checked' : ''} onchange="toggleEsp('${e.id}',this.checked)"><span class="toggle-track"></span></label>
-        <button class="btn btn-cancel" style="padding:.3rem .6rem" onclick="borrarEsp('${e.id}')">✕</button>
+        <button class="btn btn-cancel" style="padding:.3rem .6rem" onclick="borrarEsp('${e.id}')" aria-label="Eliminar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
     </div>
-  `).join('') : '<div class="empty"><div class="empty-icon">👤</div>Todavía no hay profesionales</div>';
+  `).join('') : '<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>Todavía no hay profesionales</div>';
 }
 
 async function guardarEsp() {
