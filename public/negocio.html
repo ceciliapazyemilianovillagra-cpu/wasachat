@@ -164,7 +164,9 @@ body {
 <div class="footer">Powered by <a href="/">WASACHAT</a></div>
 
 <script>
-const slug = location.pathname.split('/').filter(Boolean).pop() || 'default';
+// Lee el slug del query param ?slug=xxx o del path /slug
+const params = new URLSearchParams(location.search);
+const slug = params.get('slug') || location.pathname.split('/').filter(Boolean).pop() || 'default';
 
 fetch(`/api/negocio-publico?slug=${encodeURIComponent(slug)}`)
   .then(r => r.json())
