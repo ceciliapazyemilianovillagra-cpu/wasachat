@@ -220,13 +220,22 @@ export default async function handler(req, res) {
         break;
 
       case 'saveEspecialista': {
-        const c = { nombre: txt(p.nombre,'Nombre'), foto_url: p.foto_url||null, color: p.color||'#1B4332', activo: p.activo!==false && p.activo!=='false', orden: Number(p.orden)||0 };
-        if (negocioId && !p.id) c.negocio_id = negocioId;
-        data = p.id
-          ? row(await sql`UPDATE agenda_especialistas SET ${sql(c)} WHERE id=${p.id}
+        if (p.id) {
+          const c = {};
+          if (p.nombre     !== undefined) c.nombre    = txt(p.nombre,'Nombre');
+          if (p.foto_url   !== undefined) c.foto_url  = p.foto_url || null;
+          if (p.color      !== undefined) c.color     = p.color;
+          if (p.activo     !== undefined) c.activo    = p.activo !== false && p.activo !== 'false';
+          if (p.orden      !== undefined) c.orden     = Number(p.orden);
+          if (!Object.keys(c).length) throw Error('Nada que actualizar');
+          data = row(await sql`UPDATE agenda_especialistas SET ${sql(c)} WHERE id=${p.id}
               AND (${negocioId}::uuid IS NULL OR negocio_id=${negocioId}::uuid)
-              RETURNING id::text, nombre`)
-          : row(await sql`INSERT INTO agenda_especialistas ${sql(c)} RETURNING id::text, nombre`);
+              RETURNING id::text, nombre`);
+        } else {
+          const c = { nombre: txt(p.nombre,'Nombre'), foto_url: p.foto_url||null, color: p.color||'#1B4332', activo: p.activo!==false && p.activo!=='false', orden: Number(p.orden)||0 };
+          if (negocioId) c.negocio_id = negocioId;
+          data = row(await sql`INSERT INTO agenda_especialistas ${sql(c)} RETURNING id::text, nombre`);
+        }
         break;
       }
 
@@ -268,10 +277,20 @@ export default async function handler(req, res) {
         break;
 
       case 'saveHorario': {
-        const c = { especialista_id: txt(p.especialista_id,'Especialista'), dia_semana: txt(p.dia_semana,'Día'), hora_inicio: txt(p.hora_inicio,'Hora inicio'), hora_fin: txt(p.hora_fin,'Hora fin'), activo: p.activo!==false };
-        data = p.id
-          ? row(await sql`UPDATE agenda_horarios SET ${sql(c)} WHERE id=${p.id} RETURNING id::text`)
-          : row(await sql`INSERT INTO agenda_horarios ${sql(c)} RETURNING id::text`);
+        if (p.id) {
+          // Partial update — only include fields that were provided
+          const c = {};
+          if (p.especialista_id !== undefined) c.especialista_id = p.especialista_id;
+          if (p.dia_semana !== undefined) c.dia_semana = p.dia_semana;
+          if (p.hora_inicio !== undefined) c.hora_inicio = p.hora_inicio;
+          if (p.hora_fin !== undefined) c.hora_fin = p.hora_fin;
+          if (p.activo !== undefined) c.activo = p.activo !== false && p.activo !== 'false';
+          if (!Object.keys(c).length) throw Error('Nada que actualizar');
+          data = row(await sql`UPDATE agenda_horarios SET ${sql(c)} WHERE id=${p.id} RETURNING id::text`);
+        } else {
+          const c = { especialista_id: txt(p.especialista_id,'Especialista'), dia_semana: txt(p.dia_semana,'Día'), hora_inicio: txt(p.hora_inicio,'Hora inicio'), hora_fin: txt(p.hora_fin,'Hora fin'), activo: p.activo!==false };
+          data = row(await sql`INSERT INTO agenda_horarios ${sql(c)} RETURNING id::text`);
+        }
         break;
       }
 

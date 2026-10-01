@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi Negocio — Portal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #F5F7FF;
+  --card: #FFFFFF;
+  --nav: #1A2035;
+  --accent: #3D6CED;
+  --accent-dk: #2F57C8;
+  --text: #1A2035;
+  --muted: #566280;
+  --border: #DDE4F2;
+  --ok: #16A34A;
+  --warn: #D97706;
+  --danger: #DC2626;
+  --rad: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111827; --card: #1E2A3B; --text: #EEF2FA;
+    --muted: #8A9BBF; --border: #2A3A52; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] { --bg: #111827; --card: #1E2A3B; --text: #EEF2FA; --muted: #8A9BBF; --border: #2A3A52; color-scheme: dark; }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100%; }
+
+/* ── NAV ── */
+nav {
+  background: var(--nav);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .85rem 1.1rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.nav-titulo { font-weight: 700; font-size: 1rem; }
+.nav-negocio { font-size: .78rem; opacity: .65; }
+.nav-logout { background: rgba(255,255,255,.12); border: none; color: #fff; border-radius: 8px; padding: .35rem .75rem; font-size: .82rem; cursor: pointer; font-family: inherit; }
+.nav-logout:hover { background: rgba(255,255,255,.22); }
+
+/* ── TAB BAR ── */
+.tabbar {
+  display: flex;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabbar::-webkit-scrollbar { display: none; }
+.tab {
+  flex: 1;
+  min-width: 80px;
+  padding: .75rem .5rem;
+  text-align: center;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: color .15s;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-icon { font-size: 1.1rem; display: block; margin-bottom: .15rem; }
+
+/* ── VISTAS ── */
+.vista { display: none; padding: 1rem; max-width: 600px; margin: 0 auto; }
+.vista.active { display: block; }
+
+/* ── LOGIN ── */
+#v-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  padding: 2rem 1.2rem;
+}
+.login-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--rad);
+  padding: 2rem 1.5rem;
+  width: 100%;
+  max-width: 360px;
+}
+.login-logo { text-align: center; margin-bottom: 1.5rem; }
+.login-logo-mark { width: 56px; height: 56px; background: var(--accent); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto .6rem; font-size: 1.4rem; font-weight: 700; color: #fff; }
+.login-titulo { font-size: 1.2rem; font-weight: 700; }
+.login-sub { font-size: .82rem; color: var(--muted); margin-top: .2rem; }
+
+/* ── CARDS ── */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--rad); padding: 1rem; margin-bottom: .75rem; }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .5rem; }
+.turno-hora { font-size: 1.3rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.turno-nombre { font-weight: 600; font-size: .95rem; }
+.turno-detalle { font-size: .82rem; color: var(--muted); margin-top: .2rem; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .25rem .6rem; border-radius: 999px;
+  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+}
+.badge-pendiente { background: #FEF3C7; color: #92400E; }
+.badge-confirmada { background: #D1FAE5; color: #065F46; }
+.badge-completada { background: #E0E7FF; color: #3730A3; }
+.badge-cancelada  { background: #FEE2E2; color: #991B1B; }
+
+/* ── ACCIONES ── */
+.acciones { display: flex; gap: .5rem; margin-top: .75rem; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: .35rem; padding: .45rem .9rem; border-radius: 8px; border: none; font-size: .82rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity .15s; }
+.btn:hover { opacity: .85; }
+.btn-ok   { background: #D1FAE5; color: #065F46; }
+.btn-cancel { background: #FEE2E2; color: #991B1B; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-ghost { background: var(--border); color: var(--text); }
+
+/* ── FORM ── */
+label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin-bottom: .3rem; margin-top: .8rem; }
+label:first-child { margin-top: 0; }
+input, select { width: 100%; padding: .6rem .75rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: .92rem; font-family: inherit; background: var(--card); color: var(--text); }
+input:focus, select:focus { outline: none; border-color: var(--accent); }
+
+/* ── SECCIÓN TITULO ── */
+.sec-titulo { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 1rem 0 .5rem; }
+.sec-titulo:first-child { margin-top: 0; }
+
+/* ── FECHA NAVEGADOR ── */
+.fecha-nav { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; }
+.fecha-nav button { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .4rem .7rem; cursor: pointer; font-size: .9rem; color: var(--text); }
+.fecha-label { font-weight: 700; font-size: .95rem; flex: 1; text-align: center; }
+
+/* ── VACÍO ── */
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: .9rem; }
+.empty-icon { font-size: 2rem; margin-bottom: .5rem; }
+
+/* ── HORARIO ── */
+.horario-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; flex-wrap: wrap; }
+.horario-dia { width: 90px; font-weight: 600; font-size: .88rem; }
+.horario-rango { font-size: .85rem; color: var(--muted); flex: 1; }
+.toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track { position: absolute; inset: 0; background: var(--border); border-radius: 999px; cursor: pointer; transition: background .2s; }
+.toggle input:checked + .toggle-track { background: var(--ok); }
+.toggle-track::after { content: ''; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: transform .2s; }
+.toggle input:checked + .toggle-track::after { transform: translateX(16px); }
+
+/* ── PAUSA ── */
+.pausa-banner { background: #FEF3C7; border: 1px solid #F0C040; border-radius: 10px; padding: .85rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.pausa-txt { font-size: .88rem; color: #7A5C00; font-weight: 600; }
+
+/* ── LOADING ── */
+.loading { text-align: center; padding: 2rem; color: var(--muted); font-size: .9rem; }
+
+/* ── MSG ── */
+.msg { padding: .6rem .85rem; border-radius: 8px; font-size: .85rem; margin-bottom: .75rem; }
+.msg-ok { background: #D1FAE5; color: #065F46; }
+.msg-error { background: #FEE2E2; color: #991B1B; }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="v-login">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-mark">W</div>
+      <div class="login-titulo">Portal del negocio</div>
+      <div class="login-sub">Ingresá con tus datos</div>
+    </div>
+    <div id="login-msg"></div>
+    <label>Slug del negocio</label>
+    <input id="p-slug" type="text" placeholder="ej: peluqueria-marta" autocomplete="off">
+    <label>Clave</label>
+    <input id="p-clave" type="password" placeholder="Tu contraseña" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn btn-primary" style="width:100%;margin-top:1rem;padding:.7rem;font-size:.95rem" onclick="login()">Entrar</button>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="v-app" style="display:none">
+  <nav>
+    <div>
+      <div class="nav-titulo">📅 Mi Agenda</div>
+      <div class="nav-negocio" id="nav-nombre"></div>
+    </div>
+    <button class="nav-logout" onclick="logout()">Salir</button>
+  </nav>
+
+  <div class="tabbar">
+    <button class="tab active" onclick="ir('turnos',this)"><span class="tab-icon">📋</span>Turnos</button>
+    <button class="tab" onclick="ir('horarios',this)"><span class="tab-icon">🕐</span>Horarios</button>
+    <button class="tab" onclick="ir('profesionales',this)"><span class="tab-icon">👤</span>Personal</button>
+    <button class="tab" onclick="ir('negocio',this)"><span class="tab-icon">⚙️</span>Mi negocio</button>
+  </div>
+
+  <!-- TURNOS -->
+  <div id="tab-turnos" class="vista active">
+    <div id="pausa-banner" class="pausa-banner" style="display:none">
+      <span class="pausa-txt">⏸ Turnos pausados</span>
+      <button class="btn btn-ok" onclick="togglePausa(false)">Reactivar</button>
+    </div>
+    <div class="fecha-nav">
+      <button onclick="cambiarFecha(-1)">◀</button>
+      <div class="fecha-label" id="fecha-label">Hoy</div>
+      <button onclick="cambiarFecha(1)">▶</button>
+    </div>
+    <div id="lista-turnos"><div class="loading">Cargando...</div></div>
+  </div>
+
+  <!-- HORARIOS -->
+  <div id="tab-horarios" class="vista">
+    <div id="msg-horarios"></div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Definí los días y horarios en que atendés.</p>
+    <div id="lista-horarios"><div class="loading">Cargando...</div></div>
+    <div style="margin-top:1rem">
+      <div class="sec-titulo">Bloquear un día</div>
+      <div class="card">
+        <label>Desde</label>
+        <input type="date" id="blq-desde">
+        <label>Hasta</label>
+        <input type="date" id="blq-hasta">
+        <label>Motivo (opcional)</label>
+        <input type="text" id="blq-motivo" placeholder="Vacaciones, feriado...">
+        <div style="margin-top:.8rem">
+          <button class="btn btn-primary" onclick="guardarBloqueo()">Bloquear días</button>
+        </div>
+      </div>
+      <div class="sec-titulo">Bloqueos activos</div>
+      <div id="lista-bloqueos"></div>
+    </div>
+  </div>
+
+  <!-- PROFESIONALES -->
+  <div id="tab-profesionales" class="vista">
+    <div id="msg-profesionales"></div>
+    <div id="lista-profesionales"><div class="loading">Cargando...</div></div>
+    <div class="sec-titulo">Agregar profesional</div>
+    <div class="card">
+      <label>Nombre</label>
+      <input type="text" id="esp-nombre" placeholder="Nombre y apellido">
+      <div style="margin-top:.8rem">
+        <button class="btn btn-primary" onclick="guardarEsp()">Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MI NEGOCIO -->
+  <div id="tab-negocio" class="vista">
+    <div id="msg-negocio"></div>
+    <div class="card">
+      <label>Nombre del negocio</label>
+      <input type="text" id="neg-nombre" placeholder="Nombre">
+      <label>Descripción</label>
+      <input type="text" id="neg-desc" placeholder="Breve descripción">
+      <label>WhatsApp para notificaciones (tuyo)</label>
+      <input type="text" id="neg-owner-wa" placeholder="5491136053816">
+      <label>Nueva clave (dejá vacío para no cambiar)</label>
+      <input type="password" id="neg-clave" placeholder="Nueva contraseña">
+      <div style="margin-top:1rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="guardarNegocio()">Guardar cambios</button>
+        <button class="btn btn-cancel" onclick="togglePausa(true)" id="btn-pausar">Pausar turnos</button>
+      </div>
+    </div>
+    <div class="sec-titulo">URL para tus redes</div>
+    <div class="card">
+      <div id="url-publica" style="font-size:.85rem;word-break:break-all;color:var(--accent)"></div>
+      <button class="btn btn-ghost" style="margin-top:.6rem;font-size:.78rem" onclick="copiarUrl()">📋 Copiar link</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api/agenda';
+let TOKEN = '', NEG_ID = '', NEG_SLUG = '', NEG_NOMBRE = '', NEG_PAUSADO = false;
+let fechaActual = new Date().toLocaleDateString('en-CA');
+
+const SK_TOKEN  = 'portal_token';
+const SK_NOMBRE = 'portal_nombre';
+const SK_SLUG   = 'portal_slug';
+
+function $(id) { return document.getElementById(id); }
+function showMsg(id, txt, tipo) { $(id).innerHTML = txt ? `<div class="msg msg-${tipo}">${txt}</div>` : ''; }
+
+function fechaBonita(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${dias[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]}`;
+}
+
+async function api(action, extra = {}) {
+  const r = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-negocio-token': TOKEN },
+    body: JSON.stringify({ action, ...extra }),
+  });
+  return r.json();
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+async function login() {
+  const slug  = $('p-slug').value.trim().toLowerCase();
+  const clave = $('p-clave').value.trim();
+  if (!slug || !clave) return;
+  $('login-msg').innerHTML = '';
+  const r = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'loginNegocio', slug, clave }),
+  }).then(r => r.json());
+  if (!r.ok) { showMsg('login-msg', r.error || 'Credenciales incorrectas', 'error'); return; }
+  TOKEN = r.data.token;
+  NEG_NOMBRE = r.data.nombre;
+  NEG_SLUG = slug;
+  localStorage.setItem(SK_TOKEN,  TOKEN);
+  localStorage.setItem(SK_NOMBRE, NEG_NOMBRE);
+  localStorage.setItem(SK_SLUG,   NEG_SLUG);
+  launchApp();
+}
+
+function logout() {
+  localStorage.removeItem(SK_TOKEN);
+  localStorage.removeItem(SK_NOMBRE);
+  localStorage.removeItem(SK_SLUG);
+  location.reload();
+}
+
+function launchApp() {
+  $('v-login').style.display = 'none';
+  $('v-app').style.display = '';
+  $('nav-nombre').textContent = NEG_NOMBRE;
+  cargarTurnos();
+  cargarNegocioInfo();
+}
+
+window.addEventListener('load', () => {
+  const t = localStorage.getItem(SK_TOKEN);
+  if (t) {
+    TOKEN = t;
+    NEG_NOMBRE = localStorage.getItem(SK_NOMBRE) || '';
+    NEG_SLUG   = localStorage.getItem(SK_SLUG)   || '';
+    launchApp();
+  }
+});
+
+// ── NAV ──────────────────────────────────────────────────────────────────────
+function ir(tab, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.vista').forEach(v => v.classList.remove('active'));
+  btn.classList.add('active');
+  $('tab-' + tab).classList.add('active');
+  if (tab === 'turnos') cargarTurnos();
+  if (tab === 'horarios') cargarHorarios();
+  if (tab === 'profesionales') cargarProfesionales();
+  if (tab === 'negocio') cargarNegocioInfo();
+}
+
+// ── TURNOS ────────────────────────────────────────────────────────────────────
+function cambiarFecha(delta) {
+  const d = new Date(fechaActual + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  fechaActual = d.toLocaleDateString('en-CA');
+  cargarTurnos();
+}
+
+async function cargarTurnos() {
+  const hoy = new Date().toLocaleDateString('en-CA');
+  const esHoy = fechaActual === hoy;
+  const label = esHoy ? 'Hoy — ' + fechaBonita(hoy) : fechaBonita(fechaActual);
+  $('fecha-label').textContent = label;
+  $('lista-turnos').innerHTML = '<div class="loading">Cargando...</div>';
+
+  const r = await api('getReservasAdmin', { estado: 'todas' });
+  if (!r.ok) { $('lista-turnos').innerHTML = '<div class="empty">Error al cargar</div>'; return; }
+
+  const turnos = (r.data || []).filter(t => t.fecha === fechaActual);
+  if (!turnos.length) {
+    $('lista-turnos').innerHTML = `<div class="empty"><div class="empty-icon">📭</div>Sin turnos para este día</div>`;
+    return;
+  }
+
+  turnos.sort((a,b) => a.hora_inicio > b.hora_inicio ? 1 : -1);
+  $('lista-turnos').innerHTML = turnos.map(t => `
+    <div class="card" id="turno-${t.id}">
+      <div class="card-header">
+        <div>
+          <div class="turno-hora">${t.hora_inicio?.slice(0,5)}</div>
+          <div class="turno-nombre">${t.cliente_nombre}</div>
+          <div class="turno-detalle">${t.servicio || '—'} · ${t.especialista || '—'}</div>
+          ${t.cliente_telefono ? `<div class="turno-detalle">📱 ${t.cliente_telefono}</div>` : ''}
+        </div>
+        <span class="badge badge-${t.estado}">${t.estado}</span>
+      </div>
+      ${t.estado !== 'cancelada' && t.estado !== 'completada' ? `
+      <div class="acciones">
+        ${t.estado === 'pendiente' ? `<button class="btn btn-ok" onclick="cambiarEstado('${t.id}','confirmada')">✓ Confirmar</button>` : ''}
+        <button class="btn btn-cancel" onclick="cambiarEstado('${t.id}','cancelada')">✕ Cancelar</button>
+        <button class="btn btn-ghost" onclick="cambiarEstado('${t.id}','completada')">✔ Completar</button>
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+
+async function cambiarEstado(id, estado) {
+  const r = await api('updateReserva', { id, estado });
+  if (r.ok) cargarTurnos();
+}
+
+// ── HORARIOS ──────────────────────────────────────────────────────────────────
+async function cargarHorarios() {
+  $('lista-horarios').innerHTML = '<div class="loading">Cargando...</div>';
+  const [rH, rE] = await Promise.all([api('listHorarios'), api('listEspecialistas')]);
+  if (!rH.ok || !rE.ok) { $('lista-horarios').innerHTML = '<div class="empty">Error</div>'; return; }
+
+  const esps = rE.data || [];
+  const horarios = rH.data || [];
+  const dias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+  let html = '';
+  for (const esp of esps) {
+    if (esps.length > 1) html += `<div class="sec-titulo">${esp.nombre}</div>`;
+    html += `<div class="card">`;
+    for (const dia of dias) {
+      const h = horarios.find(x => x.especialista_id === esp.id && x.dia_semana === dia);
+      html += `<div class="horario-row">
+        <span class="horario-dia">${dia.slice(0,3)}</span>
+        ${h ? `<span class="horario-rango">${h.hora_inicio} – ${h.hora_fin}</span>` : '<span class="horario-rango" style="font-style:italic">Sin horario</span>'}
+        ${h ? `<label class="toggle"><input type="checkbox" ${h.activo ? 'checked' : ''} onchange="toggleHorario('${h.id}',this.checked)"><span class="toggle-track"></span></label>` : ''}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  if (!esps.length) html = `<div class="empty"><div class="empty-icon">👤</div>Primero agregá un profesional</div>`;
+  $('lista-horarios').innerHTML = html;
+
+  // bloqueos
+  const rB = await api('listBloqueos');
+  const blq = (rB.data || []).filter(b => b.fecha_fin >= new Date().toLocaleDateString('en-CA'));
+  $('lista-bloqueos').innerHTML = blq.length ? blq.map(b => `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+      <div>
+        <div style="font-weight:600;font-size:.88rem">${b.fecha_inicio === b.fecha_fin ? fechaBonita(b.fecha_inicio) : fechaBonita(b.fecha_inicio) + ' → ' + fechaBonita(b.fecha_fin)}</div>
+        ${b.motivo ? `<div style="font-size:.78rem;color:var(--muted)">${b.motivo}</div>` : ''}
+      </div>
+      <button class="btn btn-cancel" onclick="borrarBloqueo('${b.id}')">Quitar</button>
+    </div>
+  `).join('') : '<div style="font-size:.82rem;color:var(--muted);padding:.3rem 0">Sin bloqueos activos</div>';
+}
+
+async function toggleHorario(id, activo) {
+  await api('saveHorario', { id, activo });
+}
+
+async function guardarBloqueo() {
+  const desde  = $('blq-desde').value;
+  const hasta  = $('blq-hasta').value || desde;
+  const motivo = $('blq-motivo').value.trim();
+  if (!desde) return;
+  const r = await api('saveBloqueo', { fecha_inicio: desde, fecha_fin: hasta, motivo });
+  if (r.ok) { showMsg('msg-horarios','Días bloqueados','ok'); cargarHorarios(); $('blq-desde').value=''; $('blq-hasta').value=''; $('blq-motivo').value=''; }
+  else showMsg('msg-horarios', r.error, 'error');
+}
+
+async function borrarBloqueo(id) {
+  await api('deleteBloqueo', { id });
+  cargarHorarios();
+}
+
+// ── PROFESIONALES ─────────────────────────────────────────────────────────────
+async function cargarProfesionales() {
+  $('lista-profesionales').innerHTML = '<div class="loading">Cargando...</div>';
+  const r = await api('listEspecialistas');
+  const esps = r.data || [];
+  $('lista-profesionales').innerHTML = esps.length ? esps.map(e => `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+      <div>
+        <div style="font-weight:600">${e.nombre}</div>
+        <div style="font-size:.78rem;color:var(--muted)">${e.activo ? 'Activo' : 'Inactivo'}</div>
+      </div>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        <label class="toggle"><input type="checkbox" ${e.activo ? 'checked' : ''} onchange="toggleEsp('${e.id}',this.checked)"><span class="toggle-track"></span></label>
+        <button class="btn btn-cancel" style="padding:.3rem .6rem" onclick="borrarEsp('${e.id}')">✕</button>
+      </div>
+    </div>
+  `).join('') : '<div class="empty"><div class="empty-icon">👤</div>Todavía no hay profesionales</div>';
+}
+
+async function guardarEsp() {
+  const nombre = $('esp-nombre').value.trim();
+  if (!nombre) return;
+  const r = await api('saveEspecialista', { nombre });
+  if (r.ok) { showMsg('msg-profesionales','Profesional agregado','ok'); cargarProfesionales(); $('esp-nombre').value=''; }
+  else showMsg('msg-profesionales', r.error, 'error');
+}
+
+async function toggleEsp(id, activo) {
+  await api('saveEspecialista', { id, activo });
+}
+
+async function borrarEsp(id) {
+  if (!confirm('¿Seguro que querés eliminar este profesional?')) return;
+  await api('deleteEspecialista', { id });
+  cargarProfesionales();
+}
+
+// ── MI NEGOCIO ────────────────────────────────────────────────────────────────
+async function cargarNegocioInfo() {
+  const r = await api('getNegocioInfo');
+  if (!r.ok) return;
+  const n = r.data;
+  $('neg-nombre').value   = n.nombre || '';
+  $('neg-desc').value     = n.descripcion || '';
+  $('neg-owner-wa').value = n.owner_whatsapp || '';
+  NEG_PAUSADO = n.pausado;
+  $('pausa-banner').style.display = n.pausado ? '' : 'none';
+  $('btn-pausar').style.display   = n.pausado ? 'none' : '';
+  const url = `${location.origin}/negocio?slug=${NEG_SLUG}`;
+  $('url-publica').textContent = url;
+}
+
+async function guardarNegocio() {
+  const payload = {
+    nombre:        $('neg-nombre').value.trim(),
+    descripcion:   $('neg-desc').value.trim(),
+    owner_whatsapp: $('neg-owner-wa').value.trim(),
+  };
+  const clave = $('neg-clave').value.trim();
+  if (clave) payload.nueva_clave = clave;
+  const r = await api('saveNegocioInfo', payload);
+  if (r.ok) {
+    NEG_NOMBRE = payload.nombre || NEG_NOMBRE;
+    localStorage.setItem(SK_NOMBRE, NEG_NOMBRE);
+    $('nav-nombre').textContent = NEG_NOMBRE;
+    showMsg('msg-negocio','Cambios guardados','ok');
+    $('neg-clave').value = '';
+  } else showMsg('msg-negocio', r.error, 'error');
+}
+
+async function togglePausa(pausar) {
+  const r = await api('saveNegocioInfo', { pausado: pausar });
+  if (r.ok) cargarNegocioInfo();
+}
+
+function copiarUrl() {
+  const url = $('url-publica').textContent;
+  navigator.clipboard.writeText(url).catch(() => {});
+}
+</script>
+</body>
+</html>
