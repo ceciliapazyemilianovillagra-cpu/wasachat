@@ -169,10 +169,30 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 /* ── LOADING ── */
 .loading { text-align: center; padding: 2rem; color: var(--muted); font-size: .9rem; }
 
-/* ── MSG ── */
+/* ── MSG (inline) ── */
 .msg { padding: .6rem .85rem; border-radius: 8px; font-size: .85rem; margin-bottom: .75rem; }
 .msg-ok { background: #D1FAE5; color: #065F46; }
 .msg-error { background: #FEE2E2; color: #991B1B; }
+
+/* ── TOAST ── */
+#toast-container {
+  position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%);
+  z-index: 999; display: flex; flex-direction: column; align-items: center;
+  gap: .5rem; pointer-events: none; width: min(360px, calc(100vw - 2rem));
+}
+.toast {
+  display: flex; align-items: center; gap: .55rem;
+  background: #1A2035; color: #fff;
+  padding: .65rem 1rem; border-radius: 10px;
+  font-size: .85rem; font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  animation: toast-in .2s ease;
+  pointer-events: auto; width: 100%;
+}
+.toast.toast-ok   { background: #065F46; }
+.toast.toast-error { background: #991B1B; }
+@keyframes toast-in  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toast-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(8px); } }
 </style>
 </head>
 <body>
@@ -316,6 +336,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
       </button>
     </div>
   </div>
+<div id="toast-container"></div>
 </div>
 
 <script>
@@ -329,6 +350,22 @@ const SK_SLUG   = 'portal_slug';
 
 function $(id) { return document.getElementById(id); }
 function showMsg(id, txt, tipo) { $(id).innerHTML = txt ? `<div class="msg msg-${tipo}">${txt}</div>` : ''; }
+
+const ICONS_TOAST = {
+  ok: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  error: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  info: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+};
+function toast(msg, tipo = 'ok', ms = 3000) {
+  const el = document.createElement('div');
+  el.className = `toast toast-${tipo}`;
+  el.innerHTML = `${ICONS_TOAST[tipo] || ICONS_TOAST.info}<span>${msg}</span>`;
+  $('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'toast-out .2s ease forwards';
+    setTimeout(() => el.remove(), 200);
+  }, ms);
+}
 
 function fechaBonita(iso) {
   const d = new Date(iso + 'T12:00:00');
@@ -452,7 +489,14 @@ async function cargarTurnos() {
 
 async function cambiarEstado(id, estado) {
   const r = await api('updateReserva', { id, estado });
-  if (r.ok) cargarTurnos();
+  if (r.ok) {
+    const labels = { confirmada: 'Turno confirmado', cancelada: 'Turno cancelado', completada: 'Turno completado' };
+    const tipos  = { confirmada: 'ok', cancelada: 'error', completada: 'info' };
+    toast(labels[estado] || 'Actualizado', tipos[estado] || 'ok');
+    cargarTurnos();
+  } else {
+    toast(r.error || 'Error al actualizar', 'error');
+  }
 }
 
 // ── HORARIOS ──────────────────────────────────────────────────────────────────
@@ -506,8 +550,8 @@ async function guardarBloqueo() {
   const motivo = $('blq-motivo').value.trim();
   if (!desde) return;
   const r = await api('saveBloqueo', { fecha_inicio: desde, fecha_fin: hasta, motivo });
-  if (r.ok) { showMsg('msg-horarios','Días bloqueados','ok'); cargarHorarios(); $('blq-desde').value=''; $('blq-hasta').value=''; $('blq-motivo').value=''; }
-  else showMsg('msg-horarios', r.error, 'error');
+  if (r.ok) { toast('Días bloqueados'); cargarHorarios(); $('blq-desde').value=''; $('blq-hasta').value=''; $('blq-motivo').value=''; }
+  else toast(r.error || 'Error al bloquear', 'error');
 }
 
 async function borrarBloqueo(id) {
@@ -540,8 +584,8 @@ async function guardarEsp() {
   const nombre = $('esp-nombre').value.trim();
   if (!nombre) return;
   const r = await api('saveEspecialista', { nombre });
-  if (r.ok) { showMsg('msg-profesionales','Profesional agregado','ok'); cargarProfesionales(); $('esp-nombre').value=''; }
-  else showMsg('msg-profesionales', r.error, 'error');
+  if (r.ok) { toast('Profesional agregado'); cargarProfesionales(); $('esp-nombre').value=''; }
+  else toast(r.error || 'Error al agregar', 'error');
 }
 
 async function toggleEsp(id, activo) {
@@ -582,19 +626,20 @@ async function guardarNegocio() {
     NEG_NOMBRE = payload.nombre || NEG_NOMBRE;
     localStorage.setItem(SK_NOMBRE, NEG_NOMBRE);
     $('nav-nombre').textContent = NEG_NOMBRE;
-    showMsg('msg-negocio','Cambios guardados','ok');
+    toast('Cambios guardados');
     $('neg-clave').value = '';
-  } else showMsg('msg-negocio', r.error, 'error');
+  } else toast(r.error || 'Error al guardar', 'error');
 }
 
 async function togglePausa(pausar) {
   const r = await api('saveNegocioInfo', { pausado: pausar });
-  if (r.ok) cargarNegocioInfo();
+  if (r.ok) { toast(pausar ? 'Turnos pausados' : 'Turnos reactivados', pausar ? 'error' : 'ok'); cargarNegocioInfo(); }
+  else toast(r.error || 'Error', 'error');
 }
 
 function copiarUrl() {
   const url = $('url-publica').textContent;
-  navigator.clipboard.writeText(url).catch(() => {});
+  navigator.clipboard.writeText(url).then(() => toast('Link copiado', 'info')).catch(() => {});
 }
 </script>
 </body>
