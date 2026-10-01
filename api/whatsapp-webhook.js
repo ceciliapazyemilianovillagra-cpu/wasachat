@@ -5,14 +5,15 @@
  */
 import { db, getCfg, row, calcularSlots, proxFechas, generarCodigo, fechaBonita, aplicarPlantilla, minutosDeTime, timeDeMinutos } from './_db.js';
 
-const PHONE_NUMBER_ID = process.env.WA_PHONE_NUMBER_ID;
+const PHONE_NUMBER_ID       = process.env.WA_PHONE_NUMBER_ID;       // avisos: +54 9 11 3605-3816
+const PHONE_NUMBER_ID_TURNO = process.env.WA_PHONE_NUMBER_ID_TURNO; // chatbot: +54 9 381 551-6601
 const ACCESS_TOKEN    = process.env.WA_ACCESS_TOKEN;
 const VERIFY_TOKEN    = process.env.WA_VERIFY_TOKEN || 'wasachat-verify-2026';
 const APP_SECRET      = process.env.WA_APP_SECRET;
 
 // ── Enviar mensaje via Cloud API ──────────────────────────────────────────────
-async function enviarMensaje(telefono, texto) {
-  await fetch(`https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`, {
+async function enviarMensaje(telefono, texto, phoneId = PHONE_NUMBER_ID) {
+  await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${ACCESS_TOKEN}`,
@@ -276,32 +277,40 @@ export default async function handler(req, res) {
     // Solo procesar mensajes de texto
     if (message.type !== 'text') return;
 
-    const from    = message.from; // número con código de país, sin +
+    const incomingPhoneId = value.metadata?.phone_number_id;
+    const from    = message.from;
     const texto   = message.text?.body || '';
     const waId    = message.id;
     const nombre  = value.contacts?.[0]?.profile?.name || '';
+    console.log('[WA-PHONE]', incomingPhoneId);
 
     if (!texto || !from) return;
 
     const sql = db();
-    console.log('[WA-DB] connecting...');
     await sql`SET timezone='America/Argentina/Buenos_Aires'`;
     const cfg = await getCfg(sql);
-    console.log('[WA-CFG] ok');
 
     const contacto = await upsertContacto(sql, from, nombre);
-    console.log('[WA-CONTACT]', contacto?.id);
     const conv     = await getOrCreateConv(sql, contacto.id);
-    console.log('[WA-CONV]', conv?.id, conv?.bot_estado);
-
     await guardarMsg(sql, conv.id, waId, 'entrante', texto);
-    console.log('[WA-SAVED]');
 
-    const nombreContacto = contacto.nombre || nombre || 'amigo/a';
-    const respuesta = `Hola ${nombreContacto}\nSoy Pulso Creativo\nSERVICIO DE AVISO POR WHATSAPP\nen caso de consultas o reclamos dirigirse al mail info@soypulsocreativo.com.ar`;
-    await enviarMensaje(from, respuesta);
-    await guardarMsg(sql, conv.id, null, 'saliente', respuesta);
-    console.log('[WA-DONE]');
+    const esTurno = incomingPhoneId === PHONE_NUMBER_ID_TURNO;
+
+    if (esTurno) {
+      // Número de turnos → chatbot completo
+      const { msgs, estado, nCtx } = await procesarBot(sql, cfg, from, contacto.nombre || nombre, texto, conv);
+      await setBotEstado(sql, conv.id, estado, nCtx);
+      for (const m of msgs) {
+        await enviarMensaje(from, m, PHONE_NUMBER_ID_TURNO);
+        await guardarMsg(sql, conv.id, null, 'saliente', m);
+      }
+    } else {
+      // Número de avisos → mensaje fijo
+      const nombreContacto = contacto.nombre || nombre || 'amigo/a';
+      const respuesta = `Hola ${nombreContacto}\nSoy Pulso Creativo\nSERVICIO DE AVISO POR WHATSAPP\nen caso de consultas o reclamos dirigirse al mail info@soypulsocreativo.com.ar`;
+      await enviarMensaje(from, respuesta, PHONE_NUMBER_ID);
+      await guardarMsg(sql, conv.id, null, 'saliente', respuesta);
+    }
 
     await sql.end();
   } catch (e) {
