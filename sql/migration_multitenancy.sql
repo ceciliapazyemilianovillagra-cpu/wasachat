@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS negocios (
   whatsapp        TEXT NOT NULL,                  -- número con código país: 5491136053816
   whatsapp_nombre TEXT,                           -- nombre que aparece en WA
   owner_whatsapp  TEXT,                           -- número del dueño para notificaciones
+  admin_clave     TEXT,                           -- clave de acceso al panel admin
+  admin_token     UUID DEFAULT gen_random_uuid(), -- token de sesión (se regenera en cada login)
   activo          BOOLEAN DEFAULT true,
   pausado         BOOLEAN DEFAULT false,
   creado          TIMESTAMPTZ DEFAULT now(),
@@ -63,7 +65,11 @@ INSERT INTO agenda_config (clave, valor, nota) VALUES
   ('recordatorio_horas_antes', '24', 'Horas antes del turno para enviar recordatorio')
 ON CONFLICT (clave) DO NOTHING;
 
--- 6. Campo recordatorio en reservas
+-- 6. Agregar columnas a negocios si ya existe la tabla
+ALTER TABLE negocios ADD COLUMN IF NOT EXISTS admin_clave TEXT;
+ALTER TABLE negocios ADD COLUMN IF NOT EXISTS admin_token UUID DEFAULT gen_random_uuid();
+
+-- Campo recordatorio en reservas
 ALTER TABLE agenda_reservas
   ADD COLUMN IF NOT EXISTS recordatorio_enviado BOOLEAN DEFAULT false;
 

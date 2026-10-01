@@ -1,10 +1,5 @@
 import { db, getCfg, row, txt, calcularSlots, generarCodigo, fechaBonita } from './_db.js';
 
-function adminOk(req, p) {
-  const secret = process.env.AGENDA_ADMIN_SECRET;
-  return secret && (req.headers['x-admin-secret'] === secret || p.admin_secret === secret);
-}
-
 const ACCIONES_ADMIN = new Set([
   'getReservasAdmin','updateReserva','getConfig','saveConfig',
   'listEspecialistas','saveEspecialista','deleteEspecialista',
@@ -12,8 +7,30 @@ const ACCIONES_ADMIN = new Set([
   'listHorarios','saveHorario','deleteHorario',
   'listBloqueos','saveBloqueo','deleteBloqueo',
   'getMetricas','getCrmContactos','getCrmConversaciones','getCrmMensajes',
-  'updateContacto','sendWhatsApp',
+  'updateContacto','sendWhatsApp','getNegocioInfo','saveNegocioInfo',
 ]);
+
+// Devuelve { ok, superAdmin, negocioId }
+async function resolveAuth(req, p, sql) {
+  const globalSecret = process.env.AGENDA_ADMIN_SECRET;
+  const headerSecret = req.headers['x-admin-secret'];
+  const headerToken  = req.headers['x-negocio-token'];
+  const bodyToken    = p.negocio_token;
+
+  // Super admin con clave global
+  if (globalSecret && (headerSecret === globalSecret || p.admin_secret === globalSecret)) {
+    return { ok: true, superAdmin: true, negocioId: p.negocio_id || null };
+  }
+
+  // Login por negocio con token de sesión
+  const token = headerToken || bodyToken;
+  if (token) {
+    const neg = row(await sql`SELECT id::text FROM negocios WHERE admin_token::text = ${token} AND activo = true LIMIT 1`);
+    if (neg) return { ok: true, superAdmin: false, negocioId: neg.id };
+  }
+
+  return { ok: false, superAdmin: false, negocioId: null };
+}
 
 export default async function handler(req, res) {
   try {
@@ -21,9 +38,24 @@ export default async function handler(req, res) {
     const sql = db();
     const p = { ...req.query, ...(typeof req.body === 'object' && req.body ? req.body : {}) };
 
-    if (ACCIONES_ADMIN.has(p.action) && !adminOk(req, p)) {
+    // loginNegocio es público (no requiere auth previa)
+    if (p.action === 'loginNegocio') {
+      const { slug, clave } = p;
+      if (!slug || !clave) return res.status(400).json({ ok: false, error: 'Faltan slug o clave' });
+      const neg = row(await sql`
+        SELECT id::text, nombre, admin_token::text AS token
+        FROM negocios WHERE slug=${slug} AND admin_clave=${clave} AND activo=true LIMIT 1`);
+      if (!neg) return res.status(401).json({ ok: false, error: 'Credenciales incorrectas' });
+      return res.json({ ok: true, data: { negocio_id: neg.id, nombre: neg.nombre, token: neg.token } });
+    }
+
+    const auth = ACCIONES_ADMIN.has(p.action) ? await resolveAuth(req, p, sql) : { ok: true, superAdmin: false, negocioId: null };
+
+    if (ACCIONES_ADMIN.has(p.action) && !auth.ok) {
       return res.status(401).json({ ok: false, error: 'No autorizado' });
     }
+
+    const negocioId = auth.negocioId || null;
 
     let data;
 
@@ -130,6 +162,7 @@ export default async function handler(req, res) {
           LEFT JOIN agenda_especialistas e ON e.id = r.especialista_id
           LEFT JOIN agenda_servicios s ON s.id = r.servicio_id
           WHERE (${est}::text IS NULL OR r.estado = ${est})
+            AND (${negocioId}::uuid IS NULL OR r.negocio_id = ${negocioId}::uuid)
           ORDER BY r.fecha DESC, r.hora_inicio DESC LIMIT 300`;
         break;
       }
@@ -146,53 +179,92 @@ export default async function handler(req, res) {
       }
 
       case 'getConfig':
-        data = await sql`SELECT clave, valor, nota FROM agenda_config ORDER BY clave`;
+        data = await sql`SELECT clave, valor, nota FROM agenda_config
+          WHERE (${negocioId}::uuid IS NULL OR negocio_id = ${negocioId}::uuid)
+          ORDER BY clave`;
         break;
 
       case 'saveConfig': {
         const cambios = typeof p.cambios === 'object' ? p.cambios : JSON.parse(p.cambios || '{}');
         for (const [clave, valor] of Object.entries(cambios))
-          await sql`UPDATE agenda_config SET valor = ${String(valor)} WHERE clave = ${clave}`;
+          await sql`UPDATE agenda_config SET valor = ${String(valor)}
+            WHERE clave = ${clave}
+              AND (${negocioId}::uuid IS NULL OR negocio_id = ${negocioId}::uuid)`;
         data = { actualizadas: Object.keys(cambios).length };
         break;
       }
 
+      case 'getNegocioInfo': {
+        if (!negocioId) throw Error('Se requiere autenticación de negocio');
+        data = row(await sql`SELECT id::text, slug, nombre, descripcion, logo_url, whatsapp, owner_whatsapp, pausado FROM negocios WHERE id=${negocioId}`);
+        break;
+      }
+
+      case 'saveNegocioInfo': {
+        if (!negocioId) throw Error('Se requiere autenticación de negocio');
+        const c = {};
+        if (p.nombre      !== undefined) c.nombre       = p.nombre;
+        if (p.descripcion !== undefined) c.descripcion  = p.descripcion;
+        if (p.logo_url    !== undefined) c.logo_url     = p.logo_url;
+        if (p.owner_whatsapp !== undefined) c.owner_whatsapp = p.owner_whatsapp;
+        if (p.pausado     !== undefined) c.pausado      = p.pausado === true || p.pausado === 'true';
+        if (p.nueva_clave)               c.admin_clave  = p.nueva_clave;
+        data = row(await sql`UPDATE negocios SET ${sql(c)}, actualizado=now() WHERE id=${negocioId} RETURNING id::text, nombre, slug`);
+        break;
+      }
+
       case 'listEspecialistas':
-        data = await sql`SELECT id::text, nombre, foto_url, color, activo, orden FROM agenda_especialistas ORDER BY orden, nombre`;
+        data = await sql`SELECT id::text, nombre, foto_url, color, activo, orden FROM agenda_especialistas
+          WHERE (${negocioId}::uuid IS NULL OR negocio_id = ${negocioId}::uuid)
+          ORDER BY orden, nombre`;
         break;
 
       case 'saveEspecialista': {
         const c = { nombre: txt(p.nombre,'Nombre'), foto_url: p.foto_url||null, color: p.color||'#1B4332', activo: p.activo!==false && p.activo!=='false', orden: Number(p.orden)||0 };
+        if (negocioId && !p.id) c.negocio_id = negocioId;
         data = p.id
-          ? row(await sql`UPDATE agenda_especialistas SET ${sql(c)} WHERE id=${p.id} RETURNING id::text, nombre`)
+          ? row(await sql`UPDATE agenda_especialistas SET ${sql(c)} WHERE id=${p.id}
+              AND (${negocioId}::uuid IS NULL OR negocio_id=${negocioId}::uuid)
+              RETURNING id::text, nombre`)
           : row(await sql`INSERT INTO agenda_especialistas ${sql(c)} RETURNING id::text, nombre`);
         break;
       }
 
       case 'deleteEspecialista':
-        await sql`DELETE FROM agenda_especialistas WHERE id=${p.id}`;
+        await sql`DELETE FROM agenda_especialistas WHERE id=${p.id}
+          AND (${negocioId}::uuid IS NULL OR negocio_id=${negocioId}::uuid)`;
         data = { deleted: true };
         break;
 
       case 'listServicios':
-        data = await sql`SELECT id::text, nombre, descripcion, duracion_minutos, precio::float8, especialista_id::text, activo, orden FROM agenda_servicios ORDER BY orden, nombre`;
+        data = await sql`SELECT id::text, nombre, descripcion, duracion_minutos, precio::float8, especialista_id::text, activo, orden FROM agenda_servicios
+          WHERE (${negocioId}::uuid IS NULL OR negocio_id = ${negocioId}::uuid)
+          ORDER BY orden, nombre`;
         break;
 
       case 'saveServicio': {
         const c = { nombre: txt(p.nombre,'Nombre'), descripcion: p.descripcion||null, duracion_minutos: Math.max(5,Number(p.duracion_minutos)||30), precio: Number(p.precio)||0, especialista_id: p.especialista_id||null, activo: p.activo!==false && p.activo!=='false', orden: Number(p.orden)||0 };
+        if (negocioId && !p.id) c.negocio_id = negocioId;
         data = p.id
-          ? row(await sql`UPDATE agenda_servicios SET ${sql(c)} WHERE id=${p.id} RETURNING id::text, nombre`)
+          ? row(await sql`UPDATE agenda_servicios SET ${sql(c)} WHERE id=${p.id}
+              AND (${negocioId}::uuid IS NULL OR negocio_id=${negocioId}::uuid)
+              RETURNING id::text, nombre`)
           : row(await sql`INSERT INTO agenda_servicios ${sql(c)} RETURNING id::text, nombre`);
         break;
       }
 
       case 'deleteServicio':
-        await sql`DELETE FROM agenda_servicios WHERE id=${p.id}`;
+        await sql`DELETE FROM agenda_servicios WHERE id=${p.id}
+          AND (${negocioId}::uuid IS NULL OR negocio_id=${negocioId}::uuid)`;
         data = { deleted: true };
         break;
 
       case 'listHorarios':
-        data = await sql`SELECT id::text, especialista_id::text, dia_semana, hora_inicio::text, hora_fin::text, activo FROM agenda_horarios ORDER BY especialista_id, dia_semana, hora_inicio`;
+        data = await sql`SELECT h.id::text, h.especialista_id::text, h.dia_semana, h.hora_inicio::text, h.hora_fin::text, h.activo
+          FROM agenda_horarios h
+          JOIN agenda_especialistas e ON e.id = h.especialista_id
+          WHERE (${negocioId}::uuid IS NULL OR e.negocio_id = ${negocioId}::uuid)
+          ORDER BY h.especialista_id, h.dia_semana, h.hora_inicio`;
         break;
 
       case 'saveHorario': {
@@ -209,32 +281,42 @@ export default async function handler(req, res) {
         break;
 
       case 'listBloqueos':
-        data = await sql`SELECT id::text, especialista_id, fecha_inicio::text, fecha_fin::text, hora_inicio::text, hora_fin::text, motivo FROM agenda_bloqueos ORDER BY fecha_inicio DESC`;
+        data = await sql`SELECT id::text, especialista_id, fecha_inicio::text, fecha_fin::text, hora_inicio::text, hora_fin::text, motivo FROM agenda_bloqueos
+          WHERE (${negocioId}::uuid IS NULL OR negocio_id = ${negocioId}::uuid)
+          ORDER BY fecha_inicio DESC`;
         break;
 
       case 'saveBloqueo': {
         const c = { especialista_id: p.especialista_id||'TODOS', fecha_inicio: txt(p.fecha_inicio,'Fecha inicio'), fecha_fin: txt(p.fecha_fin,'Fecha fin'), hora_inicio: p.hora_inicio||null, hora_fin: p.hora_fin||null, motivo: p.motivo||null };
+        if (negocioId && !p.id) c.negocio_id = negocioId;
         data = p.id
-          ? row(await sql`UPDATE agenda_bloqueos SET ${sql(c)} WHERE id=${p.id} RETURNING id::text`)
+          ? row(await sql`UPDATE agenda_bloqueos SET ${sql(c)} WHERE id=${p.id}
+              AND (${negocioId}::uuid IS NULL OR negocio_id=${negocioId}::uuid)
+              RETURNING id::text`)
           : row(await sql`INSERT INTO agenda_bloqueos ${sql(c)} RETURNING id::text`);
         break;
       }
 
       case 'deleteBloqueo':
-        await sql`DELETE FROM agenda_bloqueos WHERE id=${p.id}`;
+        await sql`DELETE FROM agenda_bloqueos WHERE id=${p.id}
+          AND (${negocioId}::uuid IS NULL OR negocio_id=${negocioId}::uuid)`;
         data = { deleted: true };
         break;
 
       case 'getMetricas': {
-        const hoy = new Date().toLocaleDateString('en-CA');
         const [hoyR, pend, mes] = await Promise.all([
-          sql`SELECT count(*)::int AS n FROM agenda_reservas WHERE fecha=${hoy}::date AND estado != 'cancelada'`,
-          sql`SELECT count(*)::int AS n FROM agenda_reservas WHERE estado='pendiente'`,
+          sql`SELECT count(*)::int AS n FROM agenda_reservas
+              WHERE fecha=current_date AND estado != 'cancelada'
+                AND (${negocioId}::uuid IS NULL OR negocio_id=${negocioId}::uuid)`,
+          sql`SELECT count(*)::int AS n FROM agenda_reservas
+              WHERE estado='pendiente'
+                AND (${negocioId}::uuid IS NULL OR negocio_id=${negocioId}::uuid)`,
           sql`SELECT count(*)::int AS total,
-                     count(*) FILTER (WHERE estado='cancelada')::int AS canceladas,
+                     count(*) FILTER (WHERE r.estado='cancelada')::int AS canceladas,
                      COALESCE(SUM(s.precio) FILTER (WHERE r.estado IN ('confirmada','completada')),0)::float8 AS ingreso
               FROM agenda_reservas r LEFT JOIN agenda_servicios s ON s.id=r.servicio_id
-              WHERE date_trunc('month',r.fecha) = date_trunc('month',current_date)`,
+              WHERE date_trunc('month',r.fecha) = date_trunc('month',current_date)
+                AND (${negocioId}::uuid IS NULL OR r.negocio_id=${negocioId}::uuid)`,
         ]);
         const m = mes[0];
         data = { reservasHoy: hoyR[0].n, pendientes: pend[0].n, totalMes: m.total, canceladasMes: m.canceladas, ingresoMes: m.ingreso, tasaCancelacion: m.total > 0 ? Math.round(m.canceladas/m.total*100) : 0 };
@@ -250,6 +332,7 @@ export default async function handler(req, res) {
                  max(r.fecha)::text AS ultima_reserva
           FROM wa_contactos c
           LEFT JOIN agenda_reservas r ON r.cliente_telefono = c.telefono
+            AND (${negocioId}::uuid IS NULL OR r.negocio_id = ${negocioId}::uuid)
           WHERE (${q}::text IS NULL OR c.nombre ILIKE ${q} OR c.telefono ILIKE ${q})
           GROUP BY c.id ORDER BY c.actualizado DESC LIMIT 100`;
         break;
@@ -274,6 +357,7 @@ export default async function handler(req, res) {
                  (SELECT count(*)::int FROM wa_mensajes m WHERE m.conversacion_id=conv.id) AS total_mensajes
           FROM wa_conversaciones conv
           JOIN wa_contactos c ON c.id = conv.contacto_id
+          WHERE (${negocioId}::uuid IS NULL OR conv.negocio_id = ${negocioId}::uuid)
           ORDER BY conv.ultimo_msg DESC LIMIT 100`;
         break;
       }

@@ -105,14 +105,17 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c
     <div class="login-logo-text">WASACHAT</div>
   </div>
   <div id="login-msg"></div>
-  <label>Clave admin</label>
-  <input id="input-secret" type="password" placeholder="Contraseña de administrador">
-  <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Entrar</button>
+  <label>Slug del negocio <span style="font-size:.78rem;color:var(--muted)">(opcional — super admin lo deja vacío)</span></label>
+  <input id="input-slug" type="text" placeholder="ej: peluqueria-marta" autocomplete="off" style="margin-bottom:.6rem">
+  <label>Clave</label>
+  <input id="input-secret" type="password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
+  <button class="btn btn-primary" style="width:100%;margin-top:.8rem" onclick="doLogin()">Entrar</button>
 </div>
 
 <!-- APP -->
 <nav id="nav" style="display:none">
   <div class="logo"><span class="logo-mark">W</span> WASACHAT</div>
+  <div id="nav-negocio-nombre" style="display:none;font-size:.8rem;color:rgba(255,255,255,.6);padding:.2rem 1.1rem .6rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
   <div class="section">Dashboard</div>
   <a onclick="mostrar('dashboard')" class="active">📊 Métricas</a>
   <a onclick="mostrar('reservas')">📋 Reservas</a>
@@ -305,7 +308,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c
 
 <script>
 const API = '/api/agenda';
-let SECRET = '';
+let SECRET = '';      // clave global (super admin)
+let NEG_TOKEN = '';   // token de negocio
+let NEG_NOMBRE = '';  // nombre del negocio logueado
 let cfgCache = {};
 let espsCache = [];
 
@@ -316,33 +321,77 @@ function showMsg(el, msg, tipo) {
 }
 
 async function apiFetch(action, extra = {}) {
-  const body = { action, admin_secret: SECRET, ...extra };
-  return fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-secret': SECRET }, body: JSON.stringify(body) }).then(r => r.json());
+  const headers = { 'Content-Type': 'application/json' };
+  const body = { action, ...extra };
+  if (NEG_TOKEN) {
+    headers['x-negocio-token'] = NEG_TOKEN;
+  } else {
+    headers['x-admin-secret'] = SECRET;
+    body.admin_secret = SECRET;
+  }
+  return fetch(API, { method: 'POST', headers, body: JSON.stringify(body) }).then(r => r.json());
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
-const SK = 'wasa_admin_secret';
-function doLogin() {
-  const v = $('input-secret').value.trim();
-  if (!v) return;
-  SECRET = v;
-  localStorage.setItem(SK, v);
+const SK_SECRET = 'wasa_admin_secret';
+const SK_TOKEN  = 'wasa_neg_token';
+const SK_NOMBRE = 'wasa_neg_nombre';
+
+async function doLogin() {
+  const clave = $('input-secret').value.trim();
+  const slug  = $('input-slug').value.trim().toLowerCase();
+  if (!clave) return;
+
+  // Intento login por negocio si hay slug
+  if (slug) {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'loginNegocio', slug, clave }),
+    }).then(r => r.json());
+    if (r.ok) {
+      NEG_TOKEN = r.data.token;
+      NEG_NOMBRE = r.data.nombre;
+      localStorage.setItem(SK_TOKEN,  NEG_TOKEN);
+      localStorage.setItem(SK_NOMBRE, NEG_NOMBRE);
+      launchApp();
+      return;
+    }
+    showMsg('login-msg', 'Slug o clave incorrectos', 'error');
+    return;
+  }
+
+  // Super admin (clave global, sin slug)
+  SECRET = clave;
+  localStorage.setItem(SK_SECRET, clave);
   launchApp();
 }
+
 function logout() {
-  localStorage.removeItem(SK);
+  localStorage.removeItem(SK_SECRET);
+  localStorage.removeItem(SK_TOKEN);
+  localStorage.removeItem(SK_NOMBRE);
   location.reload();
 }
+
 function launchApp() {
   $('login').style.display = 'none';
   $('nav').style.display = '';
   $('main').style.display = '';
+  if (NEG_NOMBRE) {
+    $('nav-negocio-nombre').textContent = NEG_NOMBRE;
+    $('nav-negocio-nombre').style.display = '';
+  }
   mostrar('dashboard');
   loadDashboard();
 }
+
 window.addEventListener('load', () => {
-  const s = localStorage.getItem(SK);
-  if (s) { SECRET = s; launchApp(); }
+  const token  = localStorage.getItem(SK_TOKEN);
+  const nombre = localStorage.getItem(SK_NOMBRE);
+  const secret = localStorage.getItem(SK_SECRET);
+  if (token)  { NEG_TOKEN = token; NEG_NOMBRE = nombre || ''; launchApp(); }
+  else if (secret) { SECRET = secret; launchApp(); }
   else { $('login').style.display = ''; }
 });
 
