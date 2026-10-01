@@ -7,14 +7,14 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
 <style>
 :root {
-  --bg: #F5F7FF;
+  --bg: #FDF6F2;
   --card: #FFFFFF;
-  --nav: #1A2035;
-  --accent: #3D6CED;
-  --accent-dk: #2F57C8;
-  --text: #1A2035;
-  --muted: #566280;
-  --border: #DDE4F2;
+  --nav: #6B1200;
+  --accent: #E85A00;
+  --accent-dk: #C44500;
+  --text: #1A0800;
+  --muted: #8A5040;
+  --border: #F0DDD5;
   --ok: #16A34A;
   --warn: #D97706;
   --danger: #DC2626;
@@ -22,11 +22,11 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #111827; --card: #1E2A3B; --text: #EEF2FA;
-    --muted: #8A9BBF; --border: #2A3A52; color-scheme: dark;
+    --bg: #180800; --card: #2A1200; --text: #FAF0EB;
+    --muted: #C09080; --border: #4A2010; color-scheme: dark;
   }
 }
-:root[data-theme="dark"] { --bg: #111827; --card: #1E2A3B; --text: #EEF2FA; --muted: #8A9BBF; --border: #2A3A52; color-scheme: dark; }
+:root[data-theme="dark"] { --bg: #180800; --card: #2A1200; --text: #FAF0EB; --muted: #C09080; --border: #4A2010; color-scheme: dark; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { height: 100%; }
@@ -201,9 +201,9 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 <div id="v-login">
   <div class="login-box">
     <div class="login-logo">
-      <div class="login-logo-mark">W</div>
-      <div class="login-titulo">Portal del negocio</div>
-      <div class="login-sub">Ingresá con tus datos</div>
+      <img src="/logo.svg" alt="WASACHAT" style="width:72px;height:72px;margin:0 auto .6rem;display:block">
+      <div class="login-titulo">WASACHAT</div>
+      <div class="login-sub">Portal del negocio</div>
     </div>
     <div id="login-msg"></div>
     <label>Slug del negocio</label>
@@ -218,9 +218,9 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 <div id="v-app" style="display:none">
   <nav>
     <div>
-      <div class="nav-titulo" style="display:flex;align-items:center;gap:.45rem">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Mi Agenda
+      <div class="nav-titulo" style="display:flex;align-items:center;gap:.5rem">
+        <img src="/logo.svg" alt="" style="width:28px;height:28px;border-radius:6px;background:#fff">
+        WASACHAT
       </div>
       <div class="nav-negocio" id="nav-nombre"></div>
     </div>

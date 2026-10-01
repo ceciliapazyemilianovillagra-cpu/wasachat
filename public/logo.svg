@@ -1,0 +1,55 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- White circle background -->
+  <circle cx="50" cy="50" r="47" fill="#FFFFFF"/>
+
+  <!-- ── ISOMETRIC BOX (3 layers, rounded joins) ── -->
+  <!-- Bottom layer left face -->
+  <path d="M27,49 L27,61 L50,73 L50,61 Z"
+    fill="#F2F2F2" stroke="#2D2D2D" stroke-width="2.6"
+    stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Bottom layer right face -->
+  <path d="M73,49 L73,61 L50,73 L50,61 Z"
+    fill="#FFFFFF" stroke="#2D2D2D" stroke-width="2.6"
+    stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Bottom layer top face -->
+  <path d="M27,49 L50,61 L73,49 L50,37 Z"
+    fill="#FFFFFF" stroke="#2D2D2D" stroke-width="2.6"
+    stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Orange middle band -->
+  <path d="M27,39 L27,49 L50,61 L73,49 L73,39 L50,51 Z"
+    fill="#E85A00"/>
+
+  <!-- Top layer left face -->
+  <path d="M27,29 L27,39 L50,51 L50,41 Z"
+    fill="#F2F2F2" stroke="#2D2D2D" stroke-width="2.6"
+    stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Top layer right face -->
+  <path d="M73,29 L73,39 L50,51 L50,41 Z"
+    fill="#FFFFFF" stroke="#2D2D2D" stroke-width="2.6"
+    stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Top layer top face -->
+  <path d="M27,29 L50,17 L73,29 L50,41 Z"
+    fill="#FFFFFF" stroke="#2D2D2D" stroke-width="2.6"
+    stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Orange outline lines (redraw over orange fill) -->
+  <line x1="27" y1="49" x2="50" y2="61" stroke="#2D2D2D" stroke-width="2.6" stroke-linecap="round"/>
+  <line x1="73" y1="49" x2="50" y2="61" stroke="#2D2D2D" stroke-width="2.6" stroke-linecap="round"/>
+  <line x1="27" y1="39" x2="50" y2="51" stroke="#2D2D2D" stroke-width="2.6" stroke-linecap="round"/>
+  <line x1="73" y1="39" x2="50" y2="51" stroke="#2D2D2D" stroke-width="2.6" stroke-linecap="round"/>
+
+  <!-- ── HEADSET ── -->
+  <!-- Main arc -->
+  <path d="M 14,53 A 36,37 0 1,1 86,53"
+    fill="none" stroke="#6B1200" stroke-width="7.5" stroke-linecap="round"/>
+  <!-- Left ear pad -->
+  <rect x="6" y="47" width="13" height="20" rx="6" ry="6" fill="#6B1200"/>
+  <!-- Right ear pad -->
+  <rect x="81" y="47" width="13" height="20" rx="6" ry="6" fill="#6B1200"/>
+  <!-- Mic arm -->
+  <path d="M 87,65 C 90,78 78,84 66,84"
+    fill="none" stroke="#6B1200" stroke-width="4" stroke-linecap="round"/>
+  <!-- Mic capsule (rounded) -->
+  <rect x="61" y="81" width="10" height="6" rx="3" ry="3" fill="#6B1200"/>
+</svg>

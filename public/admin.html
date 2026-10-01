@@ -7,15 +7,15 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap">
 <style>
 :root {
-  /* Arctic: navy sidebar · cobalt accent · ice surfaces */
-  --c1: #1A2035;
-  --c2: #3D6CED;
-  --ca: #EEF2FA;
-  --bg: #EEF2FA;
+  /* WASACHAT: brown sidebar · orange accent · warm surfaces */
+  --c1: #6B1200;
+  --c2: #E85A00;
+  --ca: #FEF0E8;
+  --bg: #FDF6F2;
   --card: #FFFFFF;
-  --text: #1A2035;
-  --muted: #566280;
-  --border: #DDE4F2;
+  --text: #1A0800;
+  --muted: #8A5040;
+  --border: #F0DDD5;
   --rad: 8px;
   --sidebar: 228px;
 }
@@ -29,7 +29,7 @@ nav .logo { padding: 1.15rem 1.1rem 1.05rem; font-size: .95rem; font-weight: 800
 nav .section { font-size: .71rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; padding: 1.1rem 1.1rem .3rem; color: rgba(255,255,255,.45); }
 nav a { display: flex; align-items: center; gap: .55rem; padding: .58rem .7rem; margin: .1rem .6rem; font-size: .83rem; color: rgba(255,255,255,.65); text-decoration: none; cursor: pointer; transition: .13s; border-radius: 7px; }
 nav a:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.82); }
-nav a.active { background: rgba(61,108,237,.22); color: #fff; }
+nav a.active { background: rgba(232,90,0,.28); color: #fff; }
 
 /* --- main --- */
 main { margin-left: var(--sidebar); flex: 1; padding: 1.8rem 2rem; }
@@ -47,9 +47,9 @@ h2 { font-family: 'Syne', system-ui, sans-serif; font-size: .92rem; font-weight:
 /* --- table --- */
 .tbl-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: .86rem; }
-th { background: #F4F6FC; padding: .58rem .9rem; text-align: left; font-size: .71rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--border); }
+th { background: #FEF0E8; padding: .58rem .9rem; text-align: left; font-size: .71rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--border); }
 td { padding: .68rem .9rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-tr:hover td { background: #F7F9FE; }
+tr:hover td { background: #FEF6F2; }
 
 /* --- badges --- */
 .badge { display: inline-block; padding: .2rem .55rem; border-radius: 12px; font-size: .7rem; font-weight: 700; }
@@ -101,7 +101,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c
 <!-- LOGIN -->
 <div id="login" class="card" style="display:none">
   <div class="login-logo">
-    <div class="login-logo-mark">W</div>
+    <img src="/logo.svg" alt="WASACHAT" style="width:64px;height:64px">
     <div class="login-logo-text">WASACHAT</div>
   </div>
   <div id="login-msg"></div>
@@ -114,7 +114,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c
 
 <!-- APP -->
 <nav id="nav" style="display:none">
-  <div class="logo"><span class="logo-mark">W</span> WASACHAT</div>
+  <div class="logo">
+    <img src="/logo.svg" alt="" style="width:26px;height:26px;border-radius:6px">
+    WASACHAT
+  </div>
   <div id="nav-negocio-nombre" style="display:none;font-size:.8rem;color:rgba(255,255,255,.6);padding:.2rem 1.1rem .6rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
   <div class="section">Dashboard</div>
   <a onclick="mostrar('dashboard')" class="active">📊 Métricas</a>

@@ -7,25 +7,25 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap">
 <style>
 :root {
-  --bg: #F5F7FF;
+  --bg: #FDF6F2;
   --card: #FFFFFF;
-  --text: #1A2035;
-  --muted: #566280;
-  --accent: #3D6CED;
-  --accent-light: #EEF2FA;
-  --border: #DDE4F2;
+  --text: #1A0800;
+  --muted: #8A5040;
+  --accent: #E85A00;
+  --accent-light: #FEF0E8;
+  --border: #F0DDD5;
   --rad: 16px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #111827; --card: #1E2A3B; --text: #EEF2FA;
-    --muted: #8A9BBF; --accent-light: #1E2A3B; --border: #2A3A52;
+    --bg: #180800; --card: #2A1200; --text: #FAF0EB;
+    --muted: #C09080; --accent-light: #2A1200; --border: #4A2010;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #111827; --card: #1E2A3B; --text: #EEF2FA;
-  --muted: #8A9BBF; --accent-light: #1E2A3B; --border: #2A3A52;
+  --bg: #180800; --card: #2A1200; --text: #FAF0EB;
+  --muted: #C09080; --accent-light: #2A1200; --border: #4A2010;
   color-scheme: dark;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -77,6 +77,7 @@ body {
   justify-content: center;
   margin: 0 auto;
 }
+.logo-mark img { width: 100%; height: 100%; border-radius: 18px; object-fit: cover; }
 
 .negocio-nombre {
   font-family: 'Syne', system-ui;
@@ -161,7 +162,13 @@ body {
   </a>
 </div>
 
-<div class="footer">Powered by <a href="/">WASACHAT</a></div>
+<div class="footer" style="display:flex;align-items:center;justify-content:center;gap:.4rem">
+  Powered by
+  <a href="/" style="display:inline-flex;align-items:center;gap:.3rem;color:var(--accent);text-decoration:none;font-weight:600">
+    <img src="/logo.svg" alt="" style="width:18px;height:18px">
+    WASACHAT
+  </a>
+</div>
 
 <script>
 // Lee el slug del query param ?slug=xxx o del path /slug
