@@ -12,7 +12,7 @@
     { "source": "/api/waha-webhook", "destination": "/api/waha-webhook.js" },
     { "source": "/api/negocio-publico", "destination": "/api/negocio-publico.js" },
     { "source": "/api/cron-recordatorios", "destination": "/api/cron-recordatorios.js" },
-    { "source": "/:slug([a-z0-9][a-z0-9\\-]*)", "destination": "/negocio.html" }
+    { "source": "/:slug", "destination": "/negocio.html" }
   ],
   "headers": [
     {
