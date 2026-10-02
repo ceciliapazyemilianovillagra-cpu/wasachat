@@ -7,26 +7,27 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
 <style>
 :root {
-  --bg: #FDF6F2;
+  --bg: #F2EEEB;
   --card: #FFFFFF;
-  --nav: #6B1200;
+  --nav: #1A0800;
   --accent: #E85A00;
   --accent-dk: #C44500;
+  --accent-light: #FFF0E8;
   --text: #1A0800;
-  --muted: #8A5040;
-  --border: #F0DDD5;
+  --muted: #6B5650;
+  --border: #C8BFB8;
   --ok: #16A34A;
   --warn: #D97706;
   --danger: #DC2626;
-  --rad: 12px;
+  --rad: 10px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #180800; --card: #2A1200; --text: #FAF0EB;
-    --muted: #C09080; --border: #4A2010; color-scheme: dark;
+    --bg: #0F0A08; --card: #1C1410; --text: #F5EDE8;
+    --muted: #A09088; --border: #3A2820; color-scheme: dark;
   }
 }
-:root[data-theme="dark"] { --bg: #180800; --card: #2A1200; --text: #FAF0EB; --muted: #C09080; --border: #4A2010; color-scheme: dark; }
+:root[data-theme="dark"] { --bg: #0F0A08; --card: #1C1410; --text: #F5EDE8; --muted: #A09088; --border: #3A2820; color-scheme: dark; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { height: 100%; }
@@ -105,7 +106,7 @@ nav {
 .login-sub { font-size: .82rem; color: var(--muted); margin-top: .2rem; }
 
 /* ── CARDS ── */
-.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--rad); padding: 1rem; margin-bottom: .75rem; }
+.card { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--rad); padding: 1rem; margin-bottom: .75rem; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
 .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .5rem; }
 .turno-hora { font-size: 1.3rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 .turno-nombre { font-weight: 600; font-size: .95rem; }
@@ -126,10 +127,10 @@ nav {
 .acciones { display: flex; gap: .5rem; margin-top: .75rem; flex-wrap: wrap; }
 .btn { display: inline-flex; align-items: center; gap: .35rem; padding: .45rem .9rem; border-radius: 8px; border: none; font-size: .82rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity .15s; }
 .btn:hover { opacity: .85; }
-.btn-ok   { background: #D1FAE5; color: #065F46; }
-.btn-cancel { background: #FEE2E2; color: #991B1B; }
+.btn-ok     { background: #16A34A; color: #fff; }
+.btn-cancel { background: #DC2626; color: #fff; }
 .btn-primary { background: var(--accent); color: #fff; }
-.btn-ghost { background: var(--border); color: var(--text); }
+.btn-ghost { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
 
 /* ── FORM ── */
 label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin-bottom: .3rem; margin-top: .8rem; }
@@ -138,12 +139,12 @@ input, select { width: 100%; padding: .6rem .75rem; border: 1.5px solid var(--bo
 input:focus, select:focus { outline: none; border-color: var(--accent); }
 
 /* ── SECCIÓN TITULO ── */
-.sec-titulo { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 1rem 0 .5rem; }
+.sec-titulo { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 1.2rem 0 .6rem; padding-bottom: .35rem; border-bottom: 1.5px solid var(--border); }
 .sec-titulo:first-child { margin-top: 0; }
 
 /* ── FECHA NAVEGADOR ── */
 .fecha-nav { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; }
-.fecha-nav button { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .4rem .7rem; cursor: pointer; font-size: .9rem; color: var(--text); }
+.fecha-nav button { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: .4rem .8rem; cursor: pointer; font-size: .95rem; font-weight: 600; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
 .fecha-label { font-weight: 700; font-size: .95rem; flex: 1; text-align: center; }
 
 /* ── VACÍO ── */
